@@ -311,7 +311,7 @@ public class MapPanel extends JPanel {
             x += iconSize + gap;
         }
 
-        g2.setColor(Color.BLACK);
+        g2.setColor(new Color(255, 215, 0)); // gold
         g2.drawString(text, x, y);
     }
 

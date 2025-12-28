@@ -5,6 +5,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 public class UpgradePanel extends JPanel {
 
@@ -14,19 +15,63 @@ public class UpgradePanel extends JPanel {
     private Image bgScaled;
     private int bgW = -1, bgH = -1;
 
+    private JLabel coinLabel;
+    private ImageIcon coinIcon;
+
     public UpgradePanel(AppFrame frame) {
         this.frame = frame;
         setLayout(new BorderLayout());
         bgRaw = loadImageRaw("/images/upgrade.png");
 
+        // coin UI
+        coinIcon = loadCoinIcon(18); // null if not found
+        coinLabel = new JLabel();
+        coinLabel.setOpaque(false);
+        coinLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        coinLabel.setFont(getFont().deriveFont(Font.BOLD, 14f));
+        coinLabel.setForeground(new Color(255, 215, 0)); // gold/yellow
+        refreshCoinText();
+
+        // back button
         JButton back = new JButton("Go Back");
         back.addActionListener(e -> frame.openMap());
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottom.setOpaque(false); // so background shows through
-        bottom.add(back);
+        // bottom-right stack: coin above, back below
+        JPanel south = new JPanel(new BorderLayout());
+        south.setOpaque(false);
 
-        add(bottom, BorderLayout.SOUTH);
+        JPanel rightStack = new JPanel();
+        rightStack.setOpaque(false);
+        rightStack.setLayout(new BoxLayout(rightStack, BoxLayout.Y_AXIS));
+
+        coinLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        back.setAlignmentX(Component.RIGHT_ALIGNMENT);
+
+        rightStack.add(coinLabel);
+        rightStack.add(Box.createVerticalStrut(6));
+        rightStack.add(back);
+
+        south.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
+        south.add(rightStack, BorderLayout.EAST);
+
+        add(south, BorderLayout.SOUTH);
+
+        // update coin whenever panel becomes visible
+        addHierarchyListener(e -> {
+            if (isShowing()) refreshCoinText();
+        });
+    }
+
+    private void refreshCoinText() {
+        int c = frame.getCurrentCoin();
+        if (coinIcon != null) {
+            coinLabel.setIcon(coinIcon);
+            coinLabel.setText(String.valueOf(c));
+            coinLabel.setIconTextGap(6);
+        } else {
+            coinLabel.setIcon(null);
+            coinLabel.setText("Coin: " + c);
+        }
     }
 
     private Image loadImageRaw(String path) {
@@ -37,6 +82,14 @@ public class UpgradePanel extends JPanel {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private ImageIcon loadCoinIcon(int size) {
+        URL url = getClass().getResource("/images/coin.png");
+        if (url == null) return null;
+        ImageIcon icon = new ImageIcon(url);
+        Image scaled = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaled);
     }
 
     @Override
