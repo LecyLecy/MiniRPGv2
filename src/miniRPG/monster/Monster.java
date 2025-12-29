@@ -10,20 +10,28 @@ public abstract class Monster extends Character {
 
     protected MonsterType monsterType;
     protected int expReward;
+    protected int goldReward;
     protected Map<String, Integer> skillCooldowns;
 
-    public Monster(String name, int level, int maxHP,
-                   int attack, int defense,
-                   MonsterType monsterType, int expReward) {
+    public Monster(String name,
+                   int maxHP, int attack, int defense,
+                   MonsterType monsterType,
+                   int expReward,
+                   int goldReward) {
 
-        super(name, level, maxHP, attack, defense);
+        super(name, maxHP, attack, defense);
         this.monsterType = monsterType;
         this.expReward = expReward;
+        this.goldReward = goldReward;
         this.skillCooldowns = new HashMap<>();
     }
 
     public int getExpReward() {
         return expReward;
+    }
+
+    public int getGoldReward() {
+        return goldReward;
     }
 
     public MonsterType getMonsterType() {
@@ -38,22 +46,10 @@ public abstract class Monster extends Character {
             }
         }
     }
-    
+
     protected void attackTarget(Character target) {
         int damage = Math.max(0, basicAttack() - target.getDefense());
         target.receiveDamage(damage);
-    }
-    
-    protected int goldReward;
-
-    public int getGoldReward() {
-        return goldReward;
-    }
-
-
-    @Override
-    protected void onLevelUp() {
-        // Monsters do not level up
     }
 
     @Override

@@ -8,6 +8,14 @@ public class AuthService {
         this.repo = repo;
     }
 
+    public int getExp(String username) {
+        return repo.getExp(username);
+    }
+
+    public boolean setExp(String username, int newExp) {
+        return repo.setExp(username, newExp);
+    }
+
     public boolean login(String username, String password) {
         if (isBlank(username) || isBlank(password)) return false;
 
@@ -27,7 +35,7 @@ public class AuthService {
             return RegisterResult.USERNAME_TAKEN;
         }
 
-        repo.save(new miniRPG.auth.User(username, password, "", 0));
+        repo.save(new miniRPG.auth.User(username, password, "", 0, 0));
         return RegisterResult.SUCCESS;
     }
 

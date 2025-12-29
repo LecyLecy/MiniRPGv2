@@ -10,12 +10,9 @@ public class StrengthPotion extends Potion {
 
     @Override
     public void use(Player player) {
-        int atkBoost = (int) (player.getAttack() * 0.10);
-        int defBoost = (int) (player.getDefense() * 0.10);
-        int hpBoost  = (int) (player.getMaxHP() * 0.10);
-
-        player.increaseAttack(atkBoost);
-        player.increaseDefense(defBoost);
-        player.increaseMaxHP(hpBoost);
+        // TEMPORARY FIX (compatible with derived stats):
+        // treat as a strong heal for now (10% of max HP)
+        int healAmount = Math.max(1, (int) (player.getMaxHP() * 0.10));
+        player.heal(healAmount);
     }
 }

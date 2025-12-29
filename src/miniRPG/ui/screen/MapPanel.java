@@ -34,7 +34,7 @@ public class MapPanel extends JPanel {
     private Image mapBgScaled;
     private Image coinImg;
     private final AppFrame frame;
-
+    private final HudPanel hud = new HudPanel();
 
     private int mapBgScaledW = -1;
     private int mapBgScaledH = -1;
@@ -52,8 +52,19 @@ public class MapPanel extends JPanel {
         this.frame = frame;
         setFocusable(true);
         setBackground(new Color(245, 245, 245));
-        mapBg = loadImageRaw("/images/map.png");
+        setLayout(null);
+        add(hud);
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                layoutHud();
+                hud.repaint();
+            }
+        });
 
+        hud.bind(frame);
+
+        mapBg = loadImageRaw("/images/map.png");
         upgradeImg = loadEntranceImage("/images/upgrade.png", ENTR_W - 16, ENTR_H - 28);
         shopImg    = loadEntranceImage("/images/shop.png",    ENTR_W - 16, ENTR_H - 28);
         dungeonImg = loadEntranceImage("/images/dungeon.png", ENTR_W - 16, ENTR_H - 28);
@@ -103,12 +114,32 @@ public class MapPanel extends JPanel {
                 resetSpawn();
                 layoutEntrances();
                 clampToBounds();
+
+                layoutHud();      // NEW
+                hud.revalidate(); // NEW
+                hud.repaint();    // NEW
+                repaint();        // NEW
             } else {
                 clearMovementFlags();
             }
         });
 
         SwingUtilities.invokeLater(this::requestFocusInWindow);
+    } // end of cons
+
+    private void layoutHud() {
+        int pw = getWidth();
+        int ph = getHeight();
+        if (pw <= 0 || ph <= 0) return;
+
+        Dimension pref = hud.getPreferredSize();
+        int w = Math.max(190, pref.width);
+        int h = Math.max(70, pref.height);
+
+        int xHud = pw - w - 12;
+        int yHud = ph - h - 12;
+
+        hud.setBounds(Math.max(0, xHud), Math.max(0, yHud), w, h);
     }
 
     private Image loadEntranceImage(String path, int targetW, int targetH) {
@@ -142,6 +173,9 @@ public class MapPanel extends JPanel {
         }
         transitioning = false;
         layoutEntrances();
+        layoutHud();
+        hud.revalidate();
+        hud.repaint();
         repaint();
     }
 
@@ -258,6 +292,9 @@ public class MapPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        hud.syncFromFrame(frame);  // <- we need frame reference; see next note
+        layoutHud();
+
         // draw entrances
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -310,9 +347,6 @@ public class MapPanel extends JPanel {
             g2.drawImage(coinImg, x, iconY, null);
             x += iconSize + gap;
         }
-
-        g2.setColor(new Color(255, 215, 0)); // gold
-        g2.drawString(text, x, y);
     }
 
 

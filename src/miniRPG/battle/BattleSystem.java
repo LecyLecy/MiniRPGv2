@@ -2,14 +2,17 @@ package miniRPG.battle;
 
 import miniRPG.character.Character;
 import miniRPG.monster.Monster;
+import miniRPG.ui.screen.AppFrame;
 
 public class BattleSystem {
 
+    private final AppFrame frame;         // NEW
     private final Character player;
     private final Monster monster;
     private final BattleLog battleLog;
 
-    public BattleSystem(Character player, Monster monster) {
+    public BattleSystem(AppFrame frame, Character player, Monster monster) {
+        this.frame = frame;
         this.player = player;
         this.monster = monster;
         this.battleLog = new BattleLog();
@@ -36,7 +39,6 @@ public class BattleSystem {
                 return BattleResult.PLAYER_LOSE;
             }
 
-            // Cooldown tick
             player.endTurn();
             monster.endTurn();
         }
@@ -48,13 +50,15 @@ public class BattleSystem {
         int exp = monster.getExpReward();
         int gold = monster.getGoldReward();
 
-        player.gainExp(exp);
-        player.getCurrency().earn(gold);
+        // UI/session state only (saved to CSV on exit)
+        if (frame != null) {
+            frame.addExp(exp);
+            frame.addCoin(gold);
+        }
 
         battleLog.add(player.getName() + " gained " + exp + " EXP!");
         battleLog.add(player.getName() + " gained " + gold + " gold!");
     }
-
 
     public BattleLog getBattleLog() {
         return battleLog;

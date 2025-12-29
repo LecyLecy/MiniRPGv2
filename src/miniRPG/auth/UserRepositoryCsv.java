@@ -19,12 +19,40 @@ public class UserRepositoryCsv {
         ensureFileExists();
     }
 
+    private void ensureRoleCoinExpColumns(java.util.List<String> lines) {
+        if (lines.isEmpty()) return;
+
+        String header = lines.get(0).toLowerCase();
+        boolean hasRole = header.contains("role");
+        boolean hasCoin = header.contains("coin");
+        boolean hasExp  = header.contains("exp");
+
+        String newHeader = lines.get(0);
+
+        if (!hasRole) newHeader += ",role";
+        if (!hasCoin) newHeader += ",coin";
+        if (!hasExp)  newHeader += ",exp";
+        lines.set(0, newHeader);
+
+        // pad rows to: username,password,role,coin,exp
+        for (int i = 1; i < lines.size(); i++) {
+            String line = lines.get(i);
+            if (line.trim().isEmpty()) continue;
+
+            String[] p = line.split(",", -1);
+            if (p.length == 2) lines.set(i, line + ",,0,0");
+            else if (p.length == 3) lines.set(i, line + ",0,0");
+            else if (p.length == 4) lines.set(i, line + ",0");
+        }
+    }
+
+
     private void ensureFileExists() {
         try {
             if (!Files.exists(csvPath)) {
                 Files.createFile(csvPath);
                 // header
-                Files.write(csvPath, java.util.Arrays.asList("username,password,role,coin"), StandardOpenOption.APPEND);
+                Files.write(csvPath, java.util.Arrays.asList("username,password,role,coin,exp"), StandardOpenOption.APPEND);
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to create users.csv: " + e.getMessage(), e);
@@ -43,17 +71,22 @@ public class UserRepositoryCsv {
                 String[] parts = line.split(",", -1);
                 if (parts.length < 2) continue;
 
+                // biasa di ganti
                 String username = parts[0].trim();
                 String password = parts[1].trim();
                 String role = (parts.length >= 3) ? parts[2].trim() : "";
 
                 int coin = 0;
                 if (parts.length >= 4) {
-                    try { coin = Integer.parseInt(parts[3].trim()); }
-                    catch (Exception ignored) { coin = 0; }
+                    try { coin = Integer.parseInt(parts[3].trim()); } catch (Exception ignored) {}
                 }
 
-                users.add(new miniRPG.auth.User(username, password, role, coin));
+                int exp = 0;
+                if (parts.length >= 5) {
+                    try { exp = Integer.parseInt(parts[4].trim()); } catch (Exception ignored) {}
+                }
+
+                users.add(new miniRPG.auth.User(username, password, role, coin, exp));
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to read users.csv: " + e.getMessage(), e);
@@ -75,7 +108,9 @@ public class UserRepositoryCsv {
 
             // if file empty -> write header first
             if (Files.size(csvPath) == 0) {
-                Files.write(csvPath, java.util.Collections.singletonList("username,password,role,coin"), StandardOpenOption.APPEND);
+                Files.write(csvPath,
+                        java.util.Collections.singletonList("username,password,role,coin,exp"),
+                        StandardOpenOption.APPEND);
             }
 
             // disallow comma so CSV jadi simple
@@ -84,7 +119,7 @@ public class UserRepositoryCsv {
             }
 
             String role = (user.getRole() == null) ? "" : user.getRole();
-            String row = user.getUsername() + "," + user.getPassword() + "," + role + "," + user.getCoin();
+            String row = user.getUsername() + "," + user.getPassword() + "," + role + "," + user.getCoin() + "," + user.getExp();
 
             // append as new line
             Files.write(csvPath,
@@ -106,6 +141,7 @@ public class UserRepositoryCsv {
         try {
             java.util.List<String> lines = java.nio.file.Files.readAllLines(csvPath);
             if (lines.isEmpty()) return false;
+            ensureRoleCoinExpColumns(lines);
 
             // --- Ensure header has role + coin columns (upgrade old files) ---
             String headerLower = lines.get(0).toLowerCase();
@@ -185,6 +221,7 @@ public class UserRepositoryCsv {
         try {
             List<String> lines = Files.readAllLines(csvPath);
             if (lines.isEmpty()) return false;
+            ensureRoleCoinExpColumns(lines);
 
             // Ensure header/rows are upgraded to include coin
             // (reuse the same upgrade logic by calling setRoleIfEmpty on a dummy role? better: inline minimal upgrade)
@@ -225,5 +262,45 @@ public class UserRepositoryCsv {
             throw new RuntimeException("Failed to update coin in users.csv: " + e.getMessage(), e);
         }
     }
+
+    public int getExp(String username) {
+        return findByUsername(username).map(User::getExp).orElse(0);
+    }
+
+    public boolean setExp(String username, int newExp) {
+        if (newExp < 0) newExp = 0;
+
+        try {
+            java.util.List<String> lines = java.nio.file.Files.readAllLines(csvPath);
+            if (lines.isEmpty()) return false;
+
+            ensureRoleCoinExpColumns(lines);
+
+            boolean updated = false;
+
+            for (int i = 1; i < lines.size(); i++) {
+                String line = lines.get(i);
+                if (line.trim().isEmpty()) continue;
+
+                String[] parts = line.split(",", -1);
+                if (parts.length < 5) continue;
+
+                if (!parts[0].trim().equalsIgnoreCase(username)) continue;
+
+                parts[4] = String.valueOf(newExp); // exp column
+                lines.set(i, String.join(",", parts));
+                Files.write(csvPath, lines);
+                updated = true;
+                break;
+            }
+
+            if (updated) java.nio.file.Files.write(csvPath, lines);
+            return updated;
+
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to update exp in users.csv: " + e.getMessage(), e);
+        }
+    }
+
 }
 

@@ -5,7 +5,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 public class DungeonPanel extends JPanel {
 
@@ -15,28 +14,34 @@ public class DungeonPanel extends JPanel {
     private Image bgScaled;
     private int bgW = -1, bgH = -1;
 
-    private JLabel coinLabel;
-    private ImageIcon coinIcon;
-
     public DungeonPanel(AppFrame frame) {
         this.frame = frame;
         setLayout(new BorderLayout());
+        setOpaque(true);
+
+        // background
         bgRaw = loadImageRaw("/images/dungeon.png");
 
-        // coin UI
-        coinIcon = loadCoinIcon(18); // null if not found
-        coinLabel = new JLabel();
-        coinLabel.setOpaque(false);
-        coinLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        coinLabel.setFont(getFont().deriveFont(Font.BOLD, 14f));
-        coinLabel.setForeground(new Color(255, 215, 0)); // gold/yellow
-        refreshCoinText();
+        // HUD (coin + level/exp)
+        HudPanel hud = new HudPanel();
+        hud.syncFromFrame(frame);
+        hud.bind(frame);
 
-        // back button
+        // Go Back button (styled, bottom-right)
         JButton back = new JButton("Go Back");
         back.addActionListener(e -> frame.openMap());
 
-        // bottom-right stack: coin above, back below
+        back.setFocusPainted(false);
+        back.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        back.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 255, 255, 80), 1),
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)
+        ));
+        back.setBackground(new Color(0, 0, 0, 160));
+        back.setForeground(Color.WHITE);
+        back.setOpaque(true);
+
+        // Bottom-right stack: HUD above back button
         JPanel south = new JPanel(new BorderLayout());
         south.setOpaque(false);
 
@@ -44,34 +49,22 @@ public class DungeonPanel extends JPanel {
         rightStack.setOpaque(false);
         rightStack.setLayout(new BoxLayout(rightStack, BoxLayout.Y_AXIS));
 
-        coinLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        hud.setAlignmentX(Component.RIGHT_ALIGNMENT);
         back.setAlignmentX(Component.RIGHT_ALIGNMENT);
 
-        rightStack.add(coinLabel);
-        rightStack.add(Box.createVerticalStrut(6));
+        rightStack.add(hud);
+        rightStack.add(Box.createVerticalStrut(8));
         rightStack.add(back);
 
-        south.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 10));
+        south.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 12));
         south.add(rightStack, BorderLayout.EAST);
 
         add(south, BorderLayout.SOUTH);
 
-        // update coin whenever panel becomes visible
+        // Refresh HUD when shown (in case coin/exp changed)
         addHierarchyListener(e -> {
-            if (isShowing()) refreshCoinText();
+            if (isShowing()) hud.syncFromFrame(frame);
         });
-    }
-
-    private void refreshCoinText() {
-        int c = frame.getCurrentCoin();
-        if (coinIcon != null) {
-            coinLabel.setIcon(coinIcon);
-            coinLabel.setText(String.valueOf(c));
-            coinLabel.setIconTextGap(6);
-        } else {
-            coinLabel.setIcon(null);
-            coinLabel.setText("Coin: " + c);
-        }
     }
 
     private Image loadImageRaw(String path) {
@@ -84,14 +77,6 @@ public class DungeonPanel extends JPanel {
         }
     }
 
-    private ImageIcon loadCoinIcon(int size) {
-        URL url = getClass().getResource("/images/coin.png");
-        if (url == null) return null;
-        ImageIcon icon = new ImageIcon(url);
-        Image scaled = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
-        return new ImageIcon(scaled);
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -101,9 +86,14 @@ public class DungeonPanel extends JPanel {
             int h = getHeight();
             if (bgScaled == null || bgW != w || bgH != h) {
                 bgScaled = bgRaw.getScaledInstance(w, h, Image.SCALE_FAST);
-                bgW = w; bgH = h;
+                bgW = w;
+                bgH = h;
             }
             g.drawImage(bgScaled, 0, 0, null);
+        } else {
+            // fallback if image missing
+            g.setColor(new Color(30, 30, 30));
+            g.fillRect(0, 0, getWidth(), getHeight());
         }
     }
 }

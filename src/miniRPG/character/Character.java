@@ -1,6 +1,5 @@
 package miniRPG.character;
 
-import miniRPG.data.Currency;
 import miniRPG.data.StatusEffect;
 
 import java.util.ArrayList;
@@ -8,8 +7,15 @@ import java.util.List;
 
 public abstract class Character {
 
+    /* =======================
+       Identity
+       ======================= */
+
     protected String name;
-    protected int level;
+
+    /* =======================
+       Core Stats (derived for Player, fixed for Monster, etc.)
+       ======================= */
 
     protected int maxHP;
     protected int currentHP;
@@ -18,29 +24,34 @@ public abstract class Character {
     protected int defense;
 
     protected boolean alive;
+
+    /* =======================
+       Status Effects
+       ======================= */
+
     protected List<StatusEffect> statusEffects;
 
     /* =======================
-       Progression
+       Progression (TOTAL EXP ONLY)
+       - Level is derived from exp
+       - Next level threshold is derived from level
        ======================= */
 
-    protected int currentExp;
-    protected int maxExp;
+    protected int exp; // total exp (persisted in CSV for Player)
 
-    protected Currency currency;
-
-    public Character(String name, int level, int maxHP, int attack, int defense) {
+    public Character(String name, int maxHP, int attack, int defense) {
         this.name = name;
-        this.level = level;
+
         this.maxHP = maxHP;
         this.currentHP = maxHP;
+
         this.attack = attack;
         this.defense = defense;
+
         this.alive = true;
         this.statusEffects = new ArrayList<>();
 
-        this.currentExp = 0;
-        this.maxExp = calculateNextLevelExp();
+        this.exp = 0;
     }
 
     /* =======================
@@ -52,7 +63,7 @@ public abstract class Character {
     }
 
     public void receiveDamage(int damage) {
-        if (damage <= 0) return;
+        if (damage <= 0 || !alive) return;
 
         currentHP -= damage;
         if (currentHP <= 0) {
@@ -82,6 +93,7 @@ public abstract class Character {
        ======================= */
 
     public void addStatusEffect(StatusEffect effect) {
+        if (effect == null) return;
         if (!statusEffects.contains(effect)) {
             statusEffects.add(effect);
         }
@@ -96,31 +108,34 @@ public abstract class Character {
     }
 
     /* =======================
-       Experience & Leveling
+       Experience & Level (derived)
+       Rules:
+       - level = (exp / 1000) + 1
+       - next level total exp = level * 1000
+       Display example:
+       - Level 3
+       - EXP 2345/3000
        ======================= */
 
-    public void gainExp(int amount) {
-        if (amount <= 0) return;
-
-        currentExp += amount;
-
-        while (currentExp >= maxExp) {
-            currentExp -= maxExp;
-            levelUp();
-        }
+    public int getExp() {
+        return exp;
     }
 
-    protected void levelUp() {
-        level++;
-        maxExp = calculateNextLevelExp();
-        onLevelUp();
+    public void setExp(int exp) {
+        this.exp = Math.max(0, exp);
     }
 
-    protected int calculateNextLevelExp() {
-        return 100 + (level * 50);
+    public int getLevel() {
+        return (exp / 1000) + 1;
     }
 
-    protected abstract void onLevelUp();
+    public int getNextLevelExpTotal() {
+        return getLevel() * 1000;
+    }
+
+    public String getExpDisplay() {
+        return exp + "/" + getNextLevelExpTotal();
+    }
 
     /* =======================
        Turn Handling
@@ -131,23 +146,11 @@ public abstract class Character {
     }
 
     /* =======================
-       Economy
-       ======================= */
-
-    public Currency getCurrency() {
-        return currency;
-    }
-
-    /* =======================
        Getters
        ======================= */
 
     public String getName() {
         return name;
-    }
-
-    public int getLevel() {
-        return level;
     }
 
     public int getMaxHP() {
@@ -165,5 +168,8 @@ public abstract class Character {
     public int getDefense() {
         return defense;
     }
+
+    public List<StatusEffect> getStatusEffects() {
+        return statusEffects;
+    }
 }
-	

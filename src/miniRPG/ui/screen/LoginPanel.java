@@ -33,6 +33,7 @@ public class LoginPanel extends JPanel {
                 frame.showScreen("createCharacter");
                 frame.setCurrentUsername(u);
                 frame.setCurrentCoin(auth.getCoin(u));
+                frame.setCurrentExp(auth.getExp(u));
                 String role = auth.getRole(u);
                 if (role != null && !role.isEmpty()) {
                     // role already chosen -> create player + go map

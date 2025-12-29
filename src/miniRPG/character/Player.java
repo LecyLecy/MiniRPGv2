@@ -10,45 +10,75 @@ import java.util.List;
 
 public class Player extends Character {
 
-    private PlayerClass playerClass;
-    private Inventory inventory;
-    protected List<Skill> skills;
+    private final PlayerClass playerClass;
 
-    public Player(String name, PlayerClass playerClass,
-                  int maxHP, int attack, int defense) {
+    // Base stats (role defaults). Final stats = base * level
+    private final int baseHP;
+    private final int baseATK;
+    private final int baseDEF;
 
-        super(name, 1, maxHP, attack, defense);
+    private final Inventory inventory;
+    protected final List<Skill> skills;
+
+    // If you're using this later, keep it; otherwise you can remove.
+    protected Currency currency;
+
+    public Player(String name,
+                  PlayerClass playerClass,
+                  int baseHP, int baseATK, int baseDEF,
+                  int startingExp,
+                  int startingGold) {
+
+        // temporary values; recalcStats() will set correct ones based on EXP-derived level
+        super(name, 1, 1, 1);
+
         this.playerClass = playerClass;
+
+        this.baseHP = baseHP;
+        this.baseATK = baseATK;
+        this.baseDEF = baseDEF;
+
         this.inventory = new Inventory();
         this.skills = new ArrayList<>();
 
-        this.currency = new Currency(100); // NEW (starting gold)
+        this.currency = new Currency(Math.max(0, startingGold));
+
+        // total exp persisted in CSV; level is derived
+        this.exp = Math.max(0, startingExp);
+
+        recalcStats(true); // full heal at spawn
     }
 
     /* =======================
-       Level-Up Stat Growth
+       Progression
        ======================= */
 
-    @Override
-    protected void onLevelUp() {
-        switch (playerClass) {
-            case WARRIOR:
-                increaseMaxHP(30);
-                increaseAttack(5);
-                increaseDefense(4);
-                break;
+    // Adds EXP and recalculates derived stats.
+    // Full-heal only if level increased.
+    public void gainExp(int amount) {
+        if (amount <= 0) return;
 
-            case MAGE:
-                increaseMaxHP(15);
-                increaseAttack(8);
-                increaseDefense(2);
-                break;
+        int oldLevel = getLevel();
+        exp += amount;
 
-            case ARCHER:
-                increaseMaxHP(20);
-                increaseAttack(6);
-                increaseDefense(3);
-                break;
+        int newLevel = getLevel();
+        boolean leveledUp = newLevel > oldLevel;
+
+        recalcStats(leveledUp);
+    }
+
+    // Derived stats = base * level
+    private void recalcStats(boolean fullHeal) {
+        int lvl = getLevel();
+
+        this.maxHP = baseHP * lvl;
+        this.attack = baseATK * lvl;
+        this.defense = baseDEF * lvl;
+
+        if (fullHeal) {
+            this.currentHP = this.maxHP;
+        } else {
+            this.currentHP = Math.min(this.currentHP, this.maxHP);
         }
     }
 
@@ -97,22 +127,19 @@ public class Player extends Character {
         return playerClass;
     }
 
-    /* =======================
-       Stat Modification Helpers
-       ======================= */
-
-    public void increaseAttack(int amount) {
-        if (amount > 0) attack += amount;
+    public int getBaseHP() {
+        return baseHP;
     }
 
-    public void increaseDefense(int amount) {
-        if (amount > 0) defense += amount;
+    public int getBaseATK() {
+        return baseATK;
     }
 
-    public void increaseMaxHP(int amount) {
-        if (amount > 0) {
-            maxHP += amount;
-            currentHP += amount;
-        }
+    public int getBaseDEF() {
+        return baseDEF;
+    }
+
+    public Currency getCurrency() {
+        return currency;
     }
 }

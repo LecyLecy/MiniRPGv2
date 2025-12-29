@@ -8,19 +8,20 @@ public class Slime extends Monster {
 
     public Slime(int floor) {
         super(
-            "Slime",
-            floor,
-            60 + (floor * 15),
-            10 + (floor * 3),
-            5 + (floor * 2),
-            MonsterType.NORMAL,
-            floor * 40
+                "Slime",
+                hp(floor), atk(floor), def(floor),
+                MonsterType.NORMAL,
+                expReward(floor),
+                goldReward(floor)
         );
-
-        // Rewards
-        this.expReward = 20 + (floor * 5);
-        this.goldReward = 10 + (floor * 3);
     }
+
+    private static int hp(int floor) { return 60 + (floor * 15); }
+    private static int atk(int floor) { return 10 + (floor * 3); }
+    private static int def(int floor) { return 5 + (floor * 2); }
+
+    private static int expReward(int floor) { return 20 + (floor * 5); }
+    private static int goldReward(int floor) { return 10 + (floor * 3); }
 
     @Override
     public void takeTurn(Character target) {

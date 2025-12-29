@@ -1,6 +1,10 @@
 package miniRPG.ui.screen;
 
 import miniRPG.auth.AuthService;
+import miniRPG.character.Archer;
+import miniRPG.character.Mage;
+import miniRPG.character.Player;
+import miniRPG.character.Warrior;
 import miniRPG.data.PlayerClass;
 
 import javax.swing.*;
@@ -92,6 +96,7 @@ public class CreateCharacterPanel extends JPanel {
             // Write role to CSV (lock it)
             boolean ok = auth.assignRoleOnce(username, selectedClass.name());
             frame.setCurrentCoin(auth.getCoin(username));
+            frame.setCurrentExp(auth.getExp(username));
             if (!ok) {
                 JOptionPane.showMessageDialog(this,
                         "Failed to save role (maybe already set).",
@@ -101,12 +106,13 @@ public class CreateCharacterPanel extends JPanel {
             }
 
             // Create actual Player object
-            miniRPG.character.Player p;
+            int exp = frame.getCurrentExp();
+            Player p;
             switch (selectedClass) {
-                case WARRIOR: p = new miniRPG.character.Warrior(username); break;
-                case ARCHER:  p = new miniRPG.character.Archer(username);  break;
-                case MAGE:    p = new miniRPG.character.Mage(username);    break;
-                default:      p = new miniRPG.character.Warrior(username);
+                case WARRIOR: p = new Warrior(username, exp); break;
+                case ARCHER:  p = new Archer(username, exp); break;
+                case MAGE:    p = new Mage(username, exp); break;
+                default:      p = new Warrior(username, exp);
             }
 
             frame.setCurrentPlayer(p);

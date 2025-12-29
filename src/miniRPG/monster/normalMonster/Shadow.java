@@ -9,25 +9,23 @@ public class Shadow extends Monster {
     public Shadow(int floor) {
         super(
                 "Shadow",
-                floor,
-                70 + (floor * 18),   // HP: slightly tankier than Slime
-                18 + (floor * 5),    // Attack: high burst damage
-                8  + (floor * 3),    // Defense: moderate
+                hp(floor), atk(floor), def(floor),
                 MonsterType.NORMAL,
-                floor * 40           // base EXP (kept for consistency)
+                expReward(floor),
+                goldReward(floor)
         );
-
-        // Rewards (final authority)
-        this.expReward = 35 + (floor * 7);
-        this.goldReward = 20 + (floor * 5);
     }
+
+    private static int hp(int floor) { return 70 + (floor * 18); }
+    private static int atk(int floor) { return 18 + (floor * 5); }
+    private static int def(int floor) { return 8 + (floor * 3); }
+
+    private static int expReward(int floor) { return 35 + (floor * 7); }
+    private static int goldReward(int floor) { return 20 + (floor * 5); }
 
     @Override
     public void takeTurn(Character target) {
         if (!alive) return;
-
-        // Simple aggressive behavior
         attackTarget(target);
     }
 }
-
