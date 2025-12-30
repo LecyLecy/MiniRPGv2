@@ -13,9 +13,6 @@ public class Inventory {
         items = new ArrayList<>();
     }
 
-    /* =======================
-       Inventory Management
-       ======================= */
 
     public void addItem(miniRPG.item.Item item) {
         if (item != null) {
@@ -42,9 +39,6 @@ public class Inventory {
         return items.isEmpty();
     }
 
-    /* =======================
-       Item Usage
-       ======================= */
 
     public void useItem(int index, Player player) {
         miniRPG.item.Item item = getItem(index);
@@ -53,10 +47,6 @@ public class Inventory {
         item.use(player);
         removeItem(item);
     }
-
-    /* =======================
-       Utility
-       ======================= */
 
     public int size() {
         return items.size();

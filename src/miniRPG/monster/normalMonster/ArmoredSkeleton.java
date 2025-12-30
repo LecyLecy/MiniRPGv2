@@ -26,7 +26,7 @@ public class ArmoredSkeleton extends Monster {
     @Override
     public void takeTurn(Character target) {
         if (!alive) return;
-        int reducedDamage = Math.max(0, (basicAttack() / 2) - target.getDefense());
-        target.receiveDamage(reducedDamage);
+        int damage = Math.max(1, (basicAttack() / 2) - target.getDefense());
+        target.receiveDamage(damage);
     }
 }

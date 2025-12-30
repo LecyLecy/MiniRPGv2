@@ -19,10 +19,6 @@ public abstract class Skill {
         this.level = 1;
     }
 
-    /* =======================
-       Cooldown Handling
-       ======================= */
-
     public boolean isAvailable() {
         return currentCooldown == 0;
     }
@@ -44,20 +40,12 @@ public abstract class Skill {
         }
     }
 
-    /* =======================
-       Skill Progression
-       ======================= */
-
     public void levelUp() {
         level++;
         onLevelUp();
     }
 
     protected abstract void onLevelUp();
-
-    /* =======================
-       Skill Execution
-       ======================= */
 
     public void use(Character user, Character target) {
         if (!isAvailable()) return;
@@ -67,10 +55,6 @@ public abstract class Skill {
     }
 
     protected abstract void applyEffect(Character user, Character target);
-
-    /* =======================
-       Getters
-       ======================= */
 
     public String getName() {
         return name;

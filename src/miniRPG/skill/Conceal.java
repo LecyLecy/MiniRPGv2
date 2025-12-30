@@ -16,6 +16,6 @@ public class Conceal extends miniRPG.skill.Skill {
 
     @Override
     protected void onLevelUp() {
-        // Duration handled later
+        // Duration handled nanti
     }
 }

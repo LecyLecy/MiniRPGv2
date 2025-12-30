@@ -5,7 +5,7 @@ public class User {
     private final String password;
     private final String role;
     private final int coin;
-    private final int exp;   // NEW
+    private final int exp;
 
     public User(String username, String password, String role, int coin, int exp) {
         this.username = username;

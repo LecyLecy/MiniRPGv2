@@ -22,12 +22,10 @@ public class UpgradePanel extends JPanel {
         // background
         bgRaw = loadImageRaw("/images/upgrade.png");
 
-        // HUD (coin + level/exp)
         HudPanel hud = new HudPanel();
         hud.syncFromFrame(frame);
         hud.bind(frame);
 
-        // Go Back button (styled, bottom-right)
         JButton back = new JButton("Go Back");
         back.addActionListener(e -> frame.openMap());
 
@@ -41,7 +39,6 @@ public class UpgradePanel extends JPanel {
         back.setForeground(Color.WHITE);
         back.setOpaque(true);
 
-        // Bottom-right stack: HUD above back button
         JPanel south = new JPanel(new BorderLayout());
         south.setOpaque(false);
 
@@ -61,7 +58,6 @@ public class UpgradePanel extends JPanel {
 
         add(south, BorderLayout.SOUTH);
 
-        // Refresh HUD when shown (in case coin/exp changed)
         addHierarchyListener(e -> {
             if (isShowing()) hud.syncFromFrame(frame);
         });

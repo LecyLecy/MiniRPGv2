@@ -52,7 +52,6 @@ public class AppFrame extends JFrame {
         setLocationRelativeTo(null);
         setUndecorated(true);
 
-
         // screens
         root.add(new LoginPanel(this, AuthService), "login");
         root.add(new RegisterPanel(this, AuthService), "register");
@@ -68,9 +67,7 @@ public class AppFrame extends JFrame {
         root.add(dungeonPanel, "dungeon");
         root.add(upgradePanel, "upgrade");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            persistCoinSilently();
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::persistSessionSilently));
 
         add(root);
         initExitButton();
@@ -90,8 +87,8 @@ public class AppFrame extends JFrame {
         try {
             if (currentUsername == null || currentUsername.trim().isEmpty()) return;
 
-            AuthService.setCoin(currentUsername, currentCoin);   // overwrite
-            AuthService.setExp(currentUsername, currentExp);     // overwrite (THIS is your requirement)
+            AuthService.setCoin(currentUsername, currentCoin);
+            AuthService.setExp(currentUsername, currentExp);
 
         } catch (Exception ignored) {}
     }
@@ -109,7 +106,6 @@ public class AppFrame extends JFrame {
         this.currentExp = Math.max(0, e);
         pcs.firePropertyChange("exp", old, this.currentExp);
 
-        // optional: fire derived stats change too (future-proof for stats panels)
         pcs.firePropertyChange("stats", null, null);
     }
 
@@ -117,14 +113,12 @@ public class AppFrame extends JFrame {
     private void requestExit() {
         if (!showExitConfirmDialog()) return;
 
-        // Save coin one last time, then exit
-        persistCoinSilently();
+        persistSessionSilently();
         dispose();
         System.exit(0);
     }
 
     private boolean showExitConfirmDialog() {
-        // Simple consistent styling
         UIManager.put("OptionPane.background", new Color(245, 245, 245));
         UIManager.put("Panel.background", new Color(245, 245, 245));
         UIManager.put("Button.background", new Color(240, 240, 240));

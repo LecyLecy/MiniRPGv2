@@ -12,16 +12,18 @@ public class Player extends Character {
 
     private final PlayerClass playerClass;
 
-    // Base stats (role defaults). Final stats = base * level
     private final int baseHP;
     private final int baseATK;
     private final int baseDEF;
 
+    private int bonusHP;
+    private int bonusATK;
+    private int bonusDEF;
+
     private final Inventory inventory;
     protected final List<Skill> skills;
 
-    // If you're using this later, keep it; otherwise you can remove.
-    protected Currency currency;
+    protected final Currency currency;
 
     public Player(String name,
                   PlayerClass playerClass,
@@ -29,62 +31,74 @@ public class Player extends Character {
                   int startingExp,
                   int startingGold) {
 
-        // temporary values; recalcStats() will set correct ones based on EXP-derived level
         super(name, 1, 1, 1);
 
         this.playerClass = playerClass;
 
-        this.baseHP = baseHP;
-        this.baseATK = baseATK;
-        this.baseDEF = baseDEF;
+        this.baseHP = Math.max(1, baseHP);
+        this.baseATK = Math.max(1, baseATK);
+        this.baseDEF = Math.max(0, baseDEF);
+
+        this.bonusHP = 0;
+        this.bonusATK = 0;
+        this.bonusDEF = 0;
 
         this.inventory = new Inventory();
         this.skills = new ArrayList<>();
 
         this.currency = new Currency(Math.max(0, startingGold));
 
-        // total exp persisted in CSV; level is derived
-        this.exp = Math.max(0, startingExp);
-
-        recalcStats(true); // full heal at spawn
+        setExp(Math.max(0, startingExp));
+        recalcStats(true);
     }
 
-    /* =======================
-       Progression
-       ======================= */
-
-    // Adds EXP and recalculates derived stats.
-    // Full-heal only if level increased.
-    public void gainExp(int amount) {
-        if (amount <= 0) return;
-
+    @Override
+    public void setExp(int exp) {
         int oldLevel = getLevel();
-        exp += amount;
-
-        int newLevel = getLevel();
-        boolean leveledUp = newLevel > oldLevel;
-
+        super.setExp(exp);
+        boolean leveledUp = getLevel() > oldLevel;
         recalcStats(leveledUp);
     }
 
-    // Derived stats = base * level
     private void recalcStats(boolean fullHeal) {
         int lvl = getLevel();
 
-        this.maxHP = baseHP * lvl;
-        this.attack = baseATK * lvl;
-        this.defense = baseDEF * lvl;
+        int newMaxHP = (baseHP * lvl) + bonusHP;
+        int newATK = (baseATK * lvl) + bonusATK;
+        int newDEF = (baseDEF * lvl) + bonusDEF;
+
+        this.maxHP = Math.max(1, newMaxHP);
+        this.attack = Math.max(1, newATK);
+        this.defense = Math.max(0, newDEF);
 
         if (fullHeal) {
-            this.currentHP = this.maxHP;
+            restoreFull();
         } else {
             this.currentHP = Math.min(this.currentHP, this.maxHP);
         }
     }
 
-    /* =======================
-       Skills
-       ======================= */
+    public void increaseAttack(int amount) {
+        if (amount <= 0) return;
+        bonusATK += amount;
+        recalcStats(false);
+    }
+
+    public void increaseDefense(int amount) {
+        if (amount <= 0) return;
+        bonusDEF += amount;
+        recalcStats(false);
+    }
+
+    public void increaseMaxHP(int amount) {
+        if (amount <= 0) return;
+        bonusHP += amount;
+        int prevMax = maxHP;
+        recalcStats(false);
+        int diff = maxHP - prevMax;
+        if (diff > 0) currentHP += diff;
+        currentHP = Math.min(currentHP, maxHP);
+    }
 
     public void useSkill(int index, Character target) {
         if (index < 0 || index >= skills.size()) return;
@@ -95,21 +109,12 @@ public class Player extends Character {
         return skills;
     }
 
-    /* =======================
-       Inventory
-       ======================= */
-
     public Inventory getInventory() {
         return inventory;
     }
 
-    /* =======================
-       Turn Control
-       ======================= */
-
     @Override
     public void takeTurn(Character target) {
-        // Controlled by UI
     }
 
     @Override
@@ -118,10 +123,6 @@ public class Player extends Character {
             skill.reduceCooldown();
         }
     }
-
-    /* =======================
-       Getters
-       ======================= */
 
     public PlayerClass getPlayerClass() {
         return playerClass;

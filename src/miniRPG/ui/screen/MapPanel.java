@@ -17,7 +17,6 @@ public class MapPanel extends JPanel {
     private static final int SPRITE_W = 56;
     private static final int SPRITE_H = 56;
 
-    // entrances
     private static final int ENTR_W = 110;
     private static final int ENTR_H = 70;
 
@@ -27,54 +26,26 @@ public class MapPanel extends JPanel {
     private boolean up, down, left, right;
 
     private Image sprite;
-    private Image upgradeImg;
-    private Image shopImg;
-    private Image dungeonImg;
-    private Image mapBg;
-    private Image mapBgScaled;
-    private Image coinImg;
-    private final AppFrame frame;
-    private final HudPanel hud = new HudPanel();
 
-    private int mapBgScaledW = -1;
-    private int mapBgScaledH = -1;
+    private Image mapRaw;
+    private Image mapScaled;
+    private int mapW = -1, mapH = -1;
 
-    private String roleText = "";
-
-    // entrance hitboxes
     private Rectangle upgradeRect = new Rectangle();
     private Rectangle shopRect = new Rectangle();
     private Rectangle dungeonRect = new Rectangle();
 
-    private boolean transitioning = false; // prevent multiple triggers
+    private boolean transitioning = false;
 
     public MapPanel(AppFrame frame) {
-        this.frame = frame;
         setFocusable(true);
-        setBackground(new Color(245, 245, 245));
-        setLayout(null);
-        add(hud);
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            @Override
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                layoutHud();
-                hud.repaint();
-            }
-        });
+        setOpaque(true);
 
-        hud.bind(frame);
+        mapRaw = loadRaw("/images/map.png");
 
-        mapBg = loadImageRaw("/images/map.png");
-        upgradeImg = loadEntranceImage("/images/upgrade.png", ENTR_W - 16, ENTR_H - 28);
-        shopImg    = loadEntranceImage("/images/shop.png",    ENTR_W - 16, ENTR_H - 28);
-        dungeonImg = loadEntranceImage("/images/dungeon.png", ENTR_W - 16, ENTR_H - 28);
-        coinImg = loadEntranceImage("/images/coin.png", 20, 20); // returns null if missing
-
-        // initial spawn (left-middle will be corrected when shown)
         x = 20;
         y = 200;
 
-        // key bindings
         bindKey("pressed W", KeyStroke.getKeyStroke("pressed W"), () -> up = true);
         bindKey("released W", KeyStroke.getKeyStroke("released W"), () -> up = false);
 
@@ -99,7 +70,6 @@ public class MapPanel extends JPanel {
         bindKey("pressed RIGHT", KeyStroke.getKeyStroke("pressed RIGHT"), () -> right = true);
         bindKey("released RIGHT", KeyStroke.getKeyStroke("released RIGHT"), () -> right = false);
 
-        // loop
         Timer timer = new Timer(TICK_MS, e -> {
             if (!isShowing()) return;
             updatePositionAndCollisions(frame);
@@ -107,75 +77,28 @@ public class MapPanel extends JPanel {
         });
         timer.start();
 
-        // when panel becomes visible, ensure spawn & hitboxes correct and focus ready
         addHierarchyListener(e -> {
             if (isShowing()) {
                 requestFocusInWindow();
                 resetSpawn();
                 layoutEntrances();
                 clampToBounds();
-
-                layoutHud();      // NEW
-                hud.revalidate(); // NEW
-                hud.repaint();    // NEW
-                repaint();        // NEW
             } else {
                 clearMovementFlags();
             }
         });
 
         SwingUtilities.invokeLater(this::requestFocusInWindow);
-    } // end of cons
-
-    private void layoutHud() {
-        int pw = getWidth();
-        int ph = getHeight();
-        if (pw <= 0 || ph <= 0) return;
-
-        Dimension pref = hud.getPreferredSize();
-        int w = Math.max(190, pref.width);
-        int h = Math.max(70, pref.height);
-
-        int xHud = pw - w - 12;
-        int yHud = ph - h - 12;
-
-        hud.setBounds(Math.max(0, xHud), Math.max(0, yHud), w, h);
     }
 
-    private Image loadEntranceImage(String path, int targetW, int targetH) {
-        try (InputStream is = getClass().getResourceAsStream(path)) {
-            if (is == null) return null;
-            Image img = ImageIO.read(is);
-            return img.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private Image loadImageRaw(String path) {
-        try (InputStream is = getClass().getResourceAsStream(path)) {
-            if (is == null) return null;
-            return ImageIO.read(is);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // called by AppFrame before showing map
     public void refreshPlayer(AppFrame frame) {
         clearMovementFlags();
         Player p = frame.getCurrentPlayer();
         if (p != null) {
-            roleText = p.getPlayerClass().name();
-            sprite = loadSpriteForRole(roleText);
+            sprite = loadSpriteForRole(p.getPlayerClass().name());
         }
         transitioning = false;
         layoutEntrances();
-        layoutHud();
-        hud.revalidate();
-        hud.repaint();
         repaint();
     }
 
@@ -192,21 +115,18 @@ public class MapPanel extends JPanel {
         int h = getHeight();
         if (w <= 0 || h <= 0) return;
 
-        // upgrade: top middle
         upgradeRect = new Rectangle(
                 (w / 2) - (ENTR_W / 2),
                 30,
                 ENTR_W, ENTR_H
         );
 
-        // shop: bottom middle
         shopRect = new Rectangle(
                 (w / 2) - (ENTR_W / 2),
                 h - ENTR_H - 30,
                 ENTR_W, ENTR_H
         );
 
-        // dungeon: right middle
         dungeonRect = new Rectangle(
                 w - ENTR_W - 30,
                 (h / 2) - (ENTR_H / 2),
@@ -224,23 +144,32 @@ public class MapPanel extends JPanel {
         });
     }
 
+    private Image loadRaw(String path) {
+        try (InputStream is = getClass().getResourceAsStream(path)) {
+            if (is == null) return null;
+            return ImageIO.read(is);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     private Image loadSpriteForRole(String role) {
         String path;
         switch (role.toUpperCase()) {
-            case "WARRIOR": path = "/images/warrior.png"; break;
-            case "ARCHER":  path = "/images/archer.png"; break;
-            case "MAGE":    path = "/images/mage.png"; break;
-            default:        path = "/images/warrior.png";
+            case "WARRIOR":
+            case "KNIGHT":
+                path = "/images/warrior.png";
+                break;
+            case "ARCHER":
+                path = "/images/archer.png";
+                break;
+            case "MAGE":
+                path = "/images/mage.png";
+                break;
+            default:
+                path = "/images/warrior.png";
         }
-
-        try (InputStream is = getClass().getResourceAsStream(path)) {
-            if (is == null) return null;
-            Image img = ImageIO.read(is);
-            return img.getScaledInstance(SPRITE_W, SPRITE_H, Image.SCALE_FAST);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
+        return loadScaled(path, SPRITE_W, SPRITE_H);
     }
 
     private void updatePositionAndCollisions(AppFrame frame) {
@@ -292,26 +221,22 @@ public class MapPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        hud.syncFromFrame(frame);  // <- we need frame reference; see next note
-        layoutHud();
-
-        // draw entrances
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        if (mapBg != null) {
+        if (mapRaw != null) {
             int w = getWidth();
             int h = getHeight();
-
-            if (mapBgScaled == null || mapBgScaledW != w || mapBgScaledH != h) {
-                mapBgScaled = mapBg.getScaledInstance(w, h, Image.SCALE_FAST);
-                mapBgScaledW = w;
-                mapBgScaledH = h;
+            if (mapScaled == null || mapW != w || mapH != h) {
+                mapScaled = mapRaw.getScaledInstance(w, h, Image.SCALE_FAST);
+                mapW = w;
+                mapH = h;
             }
-
-            g2.drawImage(mapBgScaled, 0, 0, null);
+            g.drawImage(mapScaled, 0, 0, null);
+        } else {
+            g.setColor(new Color(90, 160, 110));
+            g.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        // draw player
+        Graphics2D g2 = (Graphics2D) g.create();
+
         if (sprite != null) {
             g2.drawImage(sprite, x, y, null);
         } else {
@@ -319,90 +244,30 @@ public class MapPanel extends JPanel {
             g2.fillRect(x, y, SPRITE_W, SPRITE_H);
         }
 
-        drawCoinHUD(g2, frame.getCurrentCoin());
-
         g2.dispose();
     }
 
-    private void drawCoinHUD(Graphics2D g2, int coin) {
-        String text = "Coin: " + coin;
-
-        g2.setFont(getFont().deriveFont(Font.BOLD, 14f));
-        FontMetrics fm = g2.getFontMetrics();
-
-        int padding = 10;
-        int iconSize = 20;
-        int gap = 6;
-
-        int textW = fm.stringWidth(text);
-        int textH = fm.getAscent();
-
-        int totalW = (coinImg != null) ? (iconSize + gap + textW) : textW;
-        int x = getWidth() - padding - totalW;
-        int y = getHeight() - padding - 6;
-
-        // draw icon if exists
-        if (coinImg != null) {
-            int iconY = y - iconSize + 4;
-            g2.drawImage(coinImg, x, iconY, null);
-            x += iconSize + gap;
-        }
-    }
-
-
-    private void drawEntrance(Graphics2D g2, Rectangle r, String label, Image img) {
-        // If image missing -> fallback to old box + centered text
-        if (img == null) {
-            g2.setColor(new Color(230, 230, 230));
-            g2.fillRoundRect(r.x, r.y, r.width, r.height, 16, 16);
-
-            g2.setColor(new Color(160, 160, 160));
-            g2.drawRoundRect(r.x, r.y, r.width, r.height, 16, 16);
-
-            g2.setFont(getFont().deriveFont(Font.BOLD, 14f));
-            FontMetrics fm = g2.getFontMetrics();
-            int tx = r.x + (r.width - fm.stringWidth(label)) / 2;
-            int ty = r.y + (r.height + fm.getAscent()) / 2 - 3;
-
-            g2.setColor(Color.DARK_GRAY);
-            g2.drawString(label, tx, ty);
-            return;
-        }
-
-        // Draw container
-        g2.setColor(new Color(245, 245, 245));
-        g2.fillRoundRect(r.x, r.y, r.width, r.height, 16, 16);
-
-        g2.setColor(new Color(160, 160, 160));
-        g2.drawRoundRect(r.x, r.y, r.width, r.height, 16, 16);
-
-        // Reserve bottom space for label
-        int labelH = 18;
-        int imgAreaX = r.x + 8;
-        int imgAreaY = r.y + 6;
-        int imgAreaW = r.width - 16;
-        int imgAreaH = r.height - (labelH + 10);
-
-        // Draw image centered in image area
-        int iw = img.getWidth(null);
-        int ih = img.getHeight(null);
-        int ix = imgAreaX + (imgAreaW - iw) / 2;
-        int iy = imgAreaY + (imgAreaH - ih) / 2;
-        g2.drawImage(img, ix, iy, null);
-
-        // Draw label at bottom (centered)
-        g2.setFont(getFont().deriveFont(Font.BOLD, 13f));
-        FontMetrics fm = g2.getFontMetrics();
-        int tx = r.x + (r.width - fm.stringWidth(label)) / 2;
-        int ty = r.y + r.height - 6;
-
-        g2.setColor(Color.DARK_GRAY);
-        g2.drawString(label, tx, ty);
-    }
-
-
     private void clearMovementFlags() {
         up = down = left = right = false;
+    }
+
+    private Image loadScaled(String path, int w, int h) {
+        try {
+            java.net.URL url = getClass().getResource(path);
+            if (url == null) return null;
+
+            Image img;
+            try {
+                img = ImageIO.read(url);
+            } catch (Exception ex) {
+                img = new ImageIcon(url).getImage();
+            }
+
+            if (img == null) return null;
+            return img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

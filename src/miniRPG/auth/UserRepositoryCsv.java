@@ -34,7 +34,6 @@ public class UserRepositoryCsv {
         if (!hasExp)  newHeader += ",exp";
         lines.set(0, newHeader);
 
-        // pad rows to: username,password,role,coin,exp
         for (int i = 1; i < lines.size(); i++) {
             String line = lines.get(i);
             if (line.trim().isEmpty()) continue;
@@ -106,7 +105,6 @@ public class UserRepositoryCsv {
                 Files.createFile(csvPath);
             }
 
-            // if file empty -> write header first
             if (Files.size(csvPath) == 0) {
                 Files.write(csvPath,
                         java.util.Collections.singletonList("username,password,role,coin,exp"),
@@ -121,7 +119,6 @@ public class UserRepositoryCsv {
             String role = (user.getRole() == null) ? "" : user.getRole();
             String row = user.getUsername() + "," + user.getPassword() + "," + role + "," + user.getCoin() + "," + user.getExp();
 
-            // append as new line
             Files.write(csvPath,
                     java.util.Collections.singletonList(row),
                     StandardOpenOption.APPEND);
@@ -143,33 +140,24 @@ public class UserRepositoryCsv {
             if (lines.isEmpty()) return false;
             ensureRoleCoinExpColumns(lines);
 
-            // --- Ensure header has role + coin columns (upgrade old files) ---
             String headerLower = lines.get(0).toLowerCase();
             boolean hasRole = headerLower.contains("role");
             boolean hasCoin = headerLower.contains("coin");
 
             if (!hasRole && !hasCoin) {
-                // old: username,password
                 lines.set(0, lines.get(0) + ",role,coin");
             } else if (hasRole && !hasCoin) {
-                // old: username,password,role
                 lines.set(0, lines.get(0) + ",coin");
             } else if (!hasRole && hasCoin) {
-                // weird: username,password,coin (still handle)
                 lines.set(0, lines.get(0) + ",role");
             }
-
-            // Pad every row to 4 columns: username,password,role,coin
             for (int i = 1; i < lines.size(); i++) {
                 if (lines.get(i).trim().isEmpty()) continue;
                 String[] p = lines.get(i).split(",", -1);
 
                 if (p.length == 2) {
-                    // username,password  -> username,password,,0
                     lines.set(i, lines.get(i) + ",,0");
                 } else if (p.length == 3) {
-                    // could be username,password,role OR username,password,coin
-                    // assume it's role if header has role; either way we need 4 cols
                     lines.set(i, lines.get(i) + ",0");
                 }
             }
@@ -186,16 +174,15 @@ public class UserRepositoryCsv {
                 String u = parts[0].trim();
                 if (!u.equalsIgnoreCase(username)) continue;
 
-                // Ensure 4 columns
                 if (parts.length == 2) parts = new String[]{parts[0], parts[1], "", "0"};
                 if (parts.length == 3) parts = new String[]{parts[0], parts[1], parts[2], "0"};
 
                 String existingRole = parts[2].trim();
                 if (!existingRole.isEmpty()) {
-                    return false; // role already set -> can't change
+                    return false;
                 }
 
-                parts[2] = role; // set role only, keep coin
+                parts[2] = role;
                 lines.set(i, String.join(",", parts));
                 updated = true;
                 break;
@@ -223,9 +210,6 @@ public class UserRepositoryCsv {
             if (lines.isEmpty()) return false;
             ensureRoleCoinExpColumns(lines);
 
-            // Ensure header/rows are upgraded to include coin
-            // (reuse the same upgrade logic by calling setRoleIfEmpty on a dummy role? better: inline minimal upgrade)
-            // We'll do minimal: if header doesn't include coin, add it and pad rows.
             String headerLower = lines.get(0).toLowerCase();
             if (!headerLower.contains("coin")) {
                 lines.set(0, lines.get(0) + ",coin");

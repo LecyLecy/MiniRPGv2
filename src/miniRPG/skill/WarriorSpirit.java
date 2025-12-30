@@ -17,6 +17,6 @@ public class WarriorSpirit extends Skill {
 
     @Override
     protected void onLevelUp() {
-        // Buff strength or duration handled later
+        // Buff strength or duration handled nanti aja
     }
 }

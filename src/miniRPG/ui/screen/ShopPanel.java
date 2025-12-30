@@ -15,7 +15,6 @@ public class ShopPanel extends JPanel {
     private Image bgScaled;
     private int bgW = -1, bgH = -1;
 
-    // HUD (coin + level/exp)
     private final HudPanel hud = new HudPanel();
 
     public ShopPanel(AppFrame frame) {
@@ -23,12 +22,10 @@ public class ShopPanel extends JPanel {
         setLayout(new BorderLayout());
         bgRaw = loadImageRaw("/images/shop.png");
 
-        // Back button (styled)
         JButton back = new JButton("Go Back");
         styleOverlayButton(back);
         back.addActionListener(e -> frame.openMap());
 
-        // Bottom-right stack: HUD above, Back below
         JPanel south = new JPanel(new BorderLayout());
         south.setOpaque(false);
 
@@ -48,7 +45,6 @@ public class ShopPanel extends JPanel {
         south.add(rightStack, BorderLayout.EAST);
         add(south, BorderLayout.SOUTH);
 
-        // refresh HUD whenever panel becomes visible
         addHierarchyListener(e -> {
             if (isShowing()) hud.syncFromFrame(frame);
         });

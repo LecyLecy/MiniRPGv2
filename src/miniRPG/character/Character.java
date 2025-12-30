@@ -7,15 +7,7 @@ import java.util.List;
 
 public abstract class Character {
 
-    /* =======================
-       Identity
-       ======================= */
-
     protected String name;
-
-    /* =======================
-       Core Stats (derived for Player, fixed for Monster, etc.)
-       ======================= */
 
     protected int maxHP;
     protected int currentHP;
@@ -25,38 +17,24 @@ public abstract class Character {
 
     protected boolean alive;
 
-    /* =======================
-       Status Effects
-       ======================= */
-
     protected List<StatusEffect> statusEffects;
 
-    /* =======================
-       Progression (TOTAL EXP ONLY)
-       - Level is derived from exp
-       - Next level threshold is derived from level
-       ======================= */
-
-    protected int exp; // total exp (persisted in CSV for Player)
+    protected int exp;
 
     public Character(String name, int maxHP, int attack, int defense) {
         this.name = name;
 
-        this.maxHP = maxHP;
-        this.currentHP = maxHP;
+        this.maxHP = Math.max(1, maxHP);
+        this.currentHP = this.maxHP;
 
-        this.attack = attack;
-        this.defense = defense;
+        this.attack = Math.max(1, attack);
+        this.defense = Math.max(0, defense);
 
         this.alive = true;
         this.statusEffects = new ArrayList<>();
 
         this.exp = 0;
     }
-
-    /* =======================
-       Core Life Cycle
-       ======================= */
 
     public boolean isAlive() {
         return alive;
@@ -74,23 +52,19 @@ public abstract class Character {
 
     public void heal(int amount) {
         if (amount <= 0 || !alive) return;
-
         currentHP = Math.min(currentHP + amount, maxHP);
     }
 
-    /* =======================
-       Combat
-       ======================= */
+    public void restoreFull() {
+        alive = true;
+        currentHP = maxHP;
+    }
 
     public int basicAttack() {
         return attack;
     }
 
     public abstract void takeTurn(Character target);
-
-    /* =======================
-       Status Effects
-       ======================= */
 
     public void addStatusEffect(StatusEffect effect) {
         if (effect == null) return;
@@ -107,22 +81,17 @@ public abstract class Character {
         return statusEffects.contains(effect);
     }
 
-    /* =======================
-       Experience & Level (derived)
-       Rules:
-       - level = (exp / 1000) + 1
-       - next level total exp = level * 1000
-       Display example:
-       - Level 3
-       - EXP 2345/3000
-       ======================= */
-
     public int getExp() {
         return exp;
     }
 
     public void setExp(int exp) {
         this.exp = Math.max(0, exp);
+    }
+
+    public void gainExp(int amount) {
+        if (amount <= 0) return;
+        setExp(getExp() + amount);
     }
 
     public int getLevel() {
@@ -137,17 +106,8 @@ public abstract class Character {
         return exp + "/" + getNextLevelExpTotal();
     }
 
-    /* =======================
-       Turn Handling
-       ======================= */
-
     public void endTurn() {
-        // Default: do nothing
     }
-
-    /* =======================
-       Getters
-       ======================= */
 
     public String getName() {
         return name;

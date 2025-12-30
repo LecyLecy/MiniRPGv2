@@ -1,66 +1,72 @@
 package miniRPG.battle;
 
-import miniRPG.character.Character;
+import miniRPG.character.Player;
 import miniRPG.monster.Monster;
-import miniRPG.ui.screen.AppFrame;
 
 public class BattleSystem {
 
-    private final AppFrame frame;         // NEW
-    private final Character player;
+    private final Player player;
     private final Monster monster;
     private final BattleLog battleLog;
 
-    public BattleSystem(AppFrame frame, Character player, Monster monster) {
-        this.frame = frame;
+    public BattleSystem(Player player, Monster monster) {
         this.player = player;
         this.monster = monster;
         this.battleLog = new BattleLog();
-    }
-
-    public BattleResult startBattle() {
-
         battleLog.add("A wild " + monster.getName() + " appears!");
-
-        while (player.isAlive() && monster.isAlive()) {
-
-            player.takeTurn(monster);
-
-            if (!monster.isAlive()) {
-                battleLog.add(monster.getName() + " was defeated!");
-                grantRewards();
-                return BattleResult.PLAYER_WIN;
-            }
-
-            monster.takeTurn(player);
-
-            if (!player.isAlive()) {
-                battleLog.add(player.getName() + " has been defeated...");
-                return BattleResult.PLAYER_LOSE;
-            }
-
-            player.endTurn();
-            monster.endTurn();
-        }
-
-        return BattleResult.PLAYER_LOSE;
     }
 
-    private void grantRewards() {
-        int exp = monster.getExpReward();
-        int gold = monster.getGoldReward();
+    public void playerAttack() {
+        if (!player.isAlive() || !monster.isAlive()) return;
 
-        // UI/session state only (saved to CSV on exit)
-        if (frame != null) {
-            frame.addExp(exp);
-            frame.addCoin(gold);
+        int dmg = Math.max(1, player.getAttack() - monster.getDefense());
+        monster.receiveDamage(dmg);
+
+        battleLog.add(player.getName() + " attacks for " + dmg + " damage!");
+
+        if (!monster.isAlive()) {
+            battleLog.add(monster.getName() + " was defeated!");
         }
+    }
 
-        battleLog.add(player.getName() + " gained " + exp + " EXP!");
-        battleLog.add(player.getName() + " gained " + gold + " gold!");
+    public void monsterAttack() {
+        if (!player.isAlive() || !monster.isAlive()) return;
+
+        int dmg = Math.max(1, monster.getAttack() - player.getDefense());
+        player.receiveDamage(dmg);
+
+        battleLog.add(monster.getName() + " attacks for " + dmg + " damage!");
+
+        if (!player.isAlive()) {
+            battleLog.add(player.getName() + " has been defeated...");
+        }
+    }
+
+    public boolean isOver() {
+        return !player.isAlive() || !monster.isAlive();
+    }
+
+    public boolean playerWon() {
+        return player.isAlive() && !monster.isAlive();
+    }
+
+    public int getExpReward() {
+        return monster.getExpReward();
+    }
+
+    public int getGoldReward() {
+        return monster.getGoldReward();
     }
 
     public BattleLog getBattleLog() {
         return battleLog;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public Monster getMonster() {
+        return monster;
     }
 }

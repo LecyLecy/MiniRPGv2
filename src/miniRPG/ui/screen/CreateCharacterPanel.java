@@ -47,9 +47,8 @@ public class CreateCharacterPanel extends JPanel {
         bottom.add(confirm);
         add(bottom, BorderLayout.SOUTH);
 
-        // Selection behavior
         knightBtn.addActionListener(e -> {
-            selectedClass = PlayerClass.WARRIOR; // Knight = Warrior
+            selectedClass = PlayerClass.WARRIOR;
             highlightSelected(knightBtn, archerBtn, mageBtn);
             confirm.setEnabled(true);
         });
@@ -74,7 +73,6 @@ public class CreateCharacterPanel extends JPanel {
             String username = frame.getCurrentUsername();
             if (username == null || username.trim().isEmpty()) username = "Player";
 
-            // If role already set, prevent changes
             String existing = auth.getRole(username);
             if (existing != null && !existing.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
@@ -93,7 +91,6 @@ public class CreateCharacterPanel extends JPanel {
 
             if (choice != JOptionPane.YES_OPTION) return;
 
-            // Write role to CSV (lock it)
             boolean ok = auth.assignRoleOnce(username, selectedClass.name());
             frame.setCurrentCoin(auth.getCoin(username));
             frame.setCurrentExp(auth.getExp(username));
@@ -105,7 +102,6 @@ public class CreateCharacterPanel extends JPanel {
                 return;
             }
 
-            // Create actual Player object
             int exp = frame.getCurrentExp();
             Player p;
             switch (selectedClass) {

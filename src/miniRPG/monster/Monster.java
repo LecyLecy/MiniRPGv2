@@ -8,10 +8,11 @@ import java.util.Map;
 
 public abstract class Monster extends Character {
 
-    protected MonsterType monsterType;
-    protected int expReward;
-    protected int goldReward;
-    protected Map<String, Integer> skillCooldowns;
+    protected final MonsterType monsterType;
+    protected final int expReward;
+    protected final int goldReward;
+
+    protected final Map<String, Integer> skillCooldowns;
 
     public Monster(String name,
                    int maxHP, int attack, int defense,
@@ -26,16 +27,16 @@ public abstract class Monster extends Character {
         this.skillCooldowns = new HashMap<>();
     }
 
+    public MonsterType getMonsterType() {
+        return monsterType;
+    }
+
     public int getExpReward() {
         return expReward;
     }
 
     public int getGoldReward() {
         return goldReward;
-    }
-
-    public MonsterType getMonsterType() {
-        return monsterType;
     }
 
     protected void reduceCooldowns() {
@@ -48,8 +49,13 @@ public abstract class Monster extends Character {
     }
 
     protected void attackTarget(Character target) {
-        int damage = Math.max(0, basicAttack() - target.getDefense());
+        int damage = Math.max(1, basicAttack() - target.getDefense());
         target.receiveDamage(damage);
+    }
+
+    @Override
+    public void endTurn() {
+        reduceCooldowns();
     }
 
     @Override
