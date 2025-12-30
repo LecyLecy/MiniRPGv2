@@ -52,6 +52,7 @@ public class DungeonPanel extends JPanel {
         bgRaw = loadImageRaw("/images/dungeon.png");
 
         hud.bind(frame);
+        UiKit.setFixedSize(hud, UiKit.HUD_SIZE);
 
         Dimension hudSize = new Dimension(220, 74);
         hud.setPreferredSize(hudSize);
@@ -66,31 +67,31 @@ public class DungeonPanel extends JPanel {
         north.setOpaque(false);
         north.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
 
-        GridBagConstraints n0 = new GridBagConstraints();
-        n0.gridx = 0;
-        n0.gridy = 0;
-        n0.weightx = 0;
-        n0.anchor = GridBagConstraints.WEST;
-        north.add(hud, n0);
+        GridBagConstraints a = new GridBagConstraints();
+        a.gridx = 0;
+        a.gridy = 0;
+        a.weightx = 0;
+        a.anchor = GridBagConstraints.WEST;
+        north.add(hud, a);
 
-        GridBagConstraints n1 = new GridBagConstraints();
-        n1.gridx = 1;
-        n1.gridy = 0;
-        n1.weightx = 1;
-        n1.anchor = GridBagConstraints.CENTER;
-        n1.fill = GridBagConstraints.HORIZONTAL;
-        north.add(floorLabel, n1);
+        GridBagConstraints b = new GridBagConstraints();
+        b.gridx = 1;
+        b.gridy = 0;
+        b.weightx = 1;
+        b.fill = GridBagConstraints.HORIZONTAL;
+        b.anchor = GridBagConstraints.CENTER;
+        north.add(floorLabel, b);
 
         JPanel rightPad = new JPanel();
         rightPad.setOpaque(false);
-        rightPad.setPreferredSize(hudSize);
+        rightPad.setPreferredSize(UiKit.HUD_SIZE);
 
-        GridBagConstraints n2 = new GridBagConstraints();
-        n2.gridx = 2;
-        n2.gridy = 0;
-        n2.weightx = 0;
-        n2.anchor = GridBagConstraints.EAST;
-        north.add(rightPad, n2);
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 2;
+        c.gridy = 0;
+        c.weightx = 0;
+        c.anchor = GridBagConstraints.EAST;
+        north.add(rightPad, c);
 
         add(north, BorderLayout.NORTH);
 

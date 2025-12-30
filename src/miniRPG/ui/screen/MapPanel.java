@@ -13,33 +13,32 @@ public class MapPanel extends JPanel {
 
     private static final int STEP = 8;
     private static final int TICK_MS = 16;
-
     private static final int SPRITE_W = 56;
     private static final int SPRITE_H = 56;
-
     private static final int ENTR_W = 110;
     private static final int ENTR_H = 70;
-
     private int x;
     private int y;
-
     private boolean up, down, left, right;
-
     private Image sprite;
-
     private Image mapRaw;
     private Image mapScaled;
     private int mapW = -1, mapH = -1;
-
     private Rectangle upgradeRect = new Rectangle();
     private Rectangle shopRect = new Rectangle();
     private Rectangle dungeonRect = new Rectangle();
-
     private boolean transitioning = false;
+    private final HudPanel hud;
+
+
 
     public MapPanel(AppFrame frame) {
         setFocusable(true);
         setOpaque(true);
+
+        setLayout(new BorderLayout());
+        hud = UiKit.buildHud(frame);
+        add(UiKit.topBarLeftHud(hud), BorderLayout.NORTH);
 
         mapRaw = loadRaw("/images/map.png");
 
@@ -97,6 +96,7 @@ public class MapPanel extends JPanel {
         if (p != null) {
             sprite = loadSpriteForRole(p.getPlayerClass().name());
         }
+        hud.syncFromFrame(frame);
         transitioning = false;
         layoutEntrances();
         repaint();

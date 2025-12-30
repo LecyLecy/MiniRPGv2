@@ -76,9 +76,14 @@ public class AppFrame extends JFrame {
         showScreen("login");
     } // end of constructor
 
+    public void requestExitUi() {
+        requestExit();
+    }
+
     public void addAppListener(PropertyChangeListener l) {
         pcs.addPropertyChangeListener(l);
     }
+
     public void removeAppListener(PropertyChangeListener l) {
         pcs.removePropertyChangeListener(l);
     }
@@ -203,7 +208,7 @@ public class AppFrame extends JFrame {
     private void positionExitButton() {
         if (exitButton == null) return;
 
-        int margin = 10;
+        int margin = 12;
         Dimension pref = exitButton.getPreferredSize();
 
         JLayeredPane lp = getLayeredPane();
@@ -215,32 +220,10 @@ public class AppFrame extends JFrame {
     }
 
     private JButton createExitButton() {
-        JButton btn = new JButton();
-        btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.addActionListener(e -> requestExit());
-
-        java.net.URL url = getClass().getResource("/images/exit.png");
-        if (url != null) {
-            ImageIcon icon = new ImageIcon(url);
-            Image scaled = icon.getImage().getScaledInstance(26, 26, Image.SCALE_SMOOTH);
-            btn.setIcon(new ImageIcon(scaled));
-
-            // icon-only style
-            btn.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-            btn.setContentAreaFilled(false);
-            btn.setOpaque(false);
-        } else {
-            // fallback text style
-            btn.setText("Exit");
-            btn.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(80, 80, 80), 1),
-                    BorderFactory.createEmptyBorder(6, 12, 6, 12)
-            ));
-            btn.setBackground(new Color(245, 245, 245));
-            btn.setOpaque(true);
-        }
-
+        JButton btn = new JButton("Exit");
+        UiKit.applyGhost(btn);
+        UiKit.setFixedSize(btn, UiKit.BTN_GHOST_SIZE);
+        btn.addActionListener(e -> requestExitUi());
         return btn;
     }
 
