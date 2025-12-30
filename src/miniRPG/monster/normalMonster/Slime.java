@@ -16,7 +16,7 @@ public class Slime extends Monster {
         );
     }
 
-    private static int hp(int floor) { return 60 + (floor * 15); }
+    private static int hp(int floor) { return 20 + ((floor - 1) * 10); }
     private static int atk(int floor) { return 10 + (floor * 3); }
     private static int def(int floor) { return 5 + (floor * 2); }
 

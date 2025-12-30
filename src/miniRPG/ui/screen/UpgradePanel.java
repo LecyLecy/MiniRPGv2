@@ -14,48 +14,35 @@ public class UpgradePanel extends JPanel {
     private Image bgScaled;
     private int bgW = -1, bgH = -1;
 
+    private final HudPanel hud = new HudPanel();
+
     public UpgradePanel(AppFrame frame) {
         this.frame = frame;
         setLayout(new BorderLayout());
         setOpaque(true);
 
-        // background
         bgRaw = loadImageRaw("/images/upgrade.png");
 
-        HudPanel hud = new HudPanel();
-        hud.syncFromFrame(frame);
         hud.bind(frame);
+        Dimension hudSize = new Dimension(220, 74);
+        hud.setPreferredSize(hudSize);
+        hud.setMinimumSize(hudSize);
+        hud.setMaximumSize(hudSize);
+
+        JPanel north = new JPanel(new BorderLayout());
+        north.setOpaque(false);
+        north.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
+        north.add(hud, BorderLayout.WEST);
+        add(north, BorderLayout.NORTH);
 
         JButton back = new JButton("Go Back");
+        styleOverlayButton(back);
         back.addActionListener(e -> frame.openMap());
-
-        back.setFocusPainted(false);
-        back.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        back.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(255, 255, 255, 80), 1),
-                BorderFactory.createEmptyBorder(8, 14, 8, 14)
-        ));
-        back.setBackground(new Color(0, 0, 0, 160));
-        back.setForeground(Color.WHITE);
-        back.setOpaque(true);
 
         JPanel south = new JPanel(new BorderLayout());
         south.setOpaque(false);
-
-        JPanel rightStack = new JPanel();
-        rightStack.setOpaque(false);
-        rightStack.setLayout(new BoxLayout(rightStack, BoxLayout.Y_AXIS));
-
-        hud.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        back.setAlignmentX(Component.RIGHT_ALIGNMENT);
-
-        rightStack.add(hud);
-        rightStack.add(Box.createVerticalStrut(8));
-        rightStack.add(back);
-
-        south.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 12));
-        south.add(rightStack, BorderLayout.EAST);
-
+        south.setBorder(BorderFactory.createEmptyBorder(0, 12, 16, 12));
+        south.add(back, BorderLayout.EAST);
         add(south, BorderLayout.SOUTH);
 
         addHierarchyListener(e -> {
@@ -63,12 +50,27 @@ public class UpgradePanel extends JPanel {
         });
     }
 
+    private void styleOverlayButton(JButton btn) {
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(new Color(35, 35, 35));
+        btn.setOpaque(true);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 255, 255, 70), 1),
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)
+        ));
+        Dimension backSize = new Dimension(120, 40);
+        btn.setPreferredSize(backSize);
+        btn.setMinimumSize(backSize);
+        btn.setMaximumSize(backSize);
+    }
+
     private Image loadImageRaw(String path) {
         try (InputStream is = getClass().getResourceAsStream(path)) {
             if (is == null) return null;
             return ImageIO.read(is);
         } catch (IOException e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -87,7 +89,6 @@ public class UpgradePanel extends JPanel {
             }
             g.drawImage(bgScaled, 0, 0, null);
         } else {
-            // fallback if image missing
             g.setColor(new Color(25, 25, 25));
             g.fillRect(0, 0, getWidth(), getHeight());
         }

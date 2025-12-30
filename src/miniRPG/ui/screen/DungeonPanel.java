@@ -117,14 +117,14 @@ public class DungeonPanel extends JPanel {
 
         JPanel south = new JPanel(new GridBagLayout());
         south.setOpaque(false);
-        south.setBorder(BorderFactory.createEmptyBorder(0, 12, 16, 12));
+        south.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
 
         GridBagConstraints s0 = new GridBagConstraints();
         s0.gridx = 0;
         s0.gridy = 0;
         s0.weightx = 1;
         s0.anchor = GridBagConstraints.SOUTH;
-        s0.insets = new Insets(0, 0, 18, 0);
+        s0.insets = new Insets(0, 0, 0, 0);
         south.add(attackBtn, s0);
 
         GridBagConstraints s1 = new GridBagConstraints();
@@ -132,7 +132,7 @@ public class DungeonPanel extends JPanel {
         s1.gridy = 0;
         s1.weightx = 0;
         s1.anchor = GridBagConstraints.SOUTHEAST;
-        s1.insets = new Insets(0, 12, 18, 0);
+        s1.insets = new Insets(0, 12, 0, 0);
         south.add(backBtn, s1);
 
         add(south, BorderLayout.SOUTH);
