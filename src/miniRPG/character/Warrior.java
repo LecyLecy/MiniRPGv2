@@ -1,7 +1,7 @@
 package miniRPG.character;
 
 import miniRPG.data.PlayerClass;
-import miniRPG.skill.WarriorSpirit;
+import miniRPG.skill.Bash;
 
 public class Warrior extends Player {
 
@@ -9,10 +9,11 @@ public class Warrior extends Player {
     private static final int BASE_ATK = 12;
     private static final int BASE_DEF = 10;
 
-    public Warrior(String name, int startingExp, int startingGold) {
-        super(name, PlayerClass.WARRIOR, BASE_HP, BASE_ATK, BASE_DEF, startingExp, startingGold);
+    private static final String SPRITE = "/images/warrior.png";
 
-        skills.add(new WarriorSpirit());
+    public Warrior(String name, int startingExp, int startingGold) {
+        super(name, PlayerClass.WARRIOR, BASE_HP, BASE_ATK, BASE_DEF, startingExp, startingGold, SPRITE);
+        skills.add(new Bash());
     }
 
     public Warrior(String name, int startingExp) {

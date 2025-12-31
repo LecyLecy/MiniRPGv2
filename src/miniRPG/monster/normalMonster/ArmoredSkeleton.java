@@ -1,32 +1,47 @@
 package miniRPG.monster.normalMonster;
 
-import miniRPG.character.Character;
 import miniRPG.data.MonsterType;
 import miniRPG.monster.Monster;
 
 public class ArmoredSkeleton extends Monster {
 
+    private static final String SPRITE = "/images/armored_skeleton.png";
+
     public ArmoredSkeleton(int floor) {
         super(
                 "Armored Skeleton",
-                hp(floor), atk(floor), def(floor),
+                maxHp(floor),
+                atk(floor),
+                def(floor),
                 MonsterType.NORMAL,
                 expReward(floor),
-                goldReward(floor)
+                goldReward(floor),
+                SPRITE
         );
     }
 
-    private static int hp(int floor) { return 130 + (floor * 15); }
-    private static int atk(int floor) { return 18 + (floor * 3); }
-    private static int def(int floor) { return 15 + (floor * 2); }
+    private static int maxHp(int floor) {
+        int f = Math.max(1, floor);
+        return 70 + (f * 14);
+    }
 
-    private static int expReward(int floor) { return 45 + (floor * 7); }
-    private static int goldReward(int floor) { return 25 + (floor * 5); }
+    private static int atk(int floor) {
+        int f = Math.max(1, floor);
+        return 9 + (f * 2);
+    }
 
-    @Override
-    public void takeTurn(Character target) {
-        if (!alive) return;
-        int damage = Math.max(1, (basicAttack() / 2) - target.getDefense());
-        target.receiveDamage(damage);
+    private static int def(int floor) {
+        int f = Math.max(1, floor);
+        return 4 + (f / 2);
+    }
+
+    private static int expReward(int floor) {
+        int f = Math.max(1, floor);
+        return 38 + (f * 8);
+    }
+
+    private static int goldReward(int floor) {
+        int f = Math.max(1, floor);
+        return 10 + (f * 3);
     }
 }

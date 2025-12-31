@@ -2,7 +2,7 @@ package miniRPG.character;
 
 import miniRPG.data.Currency;
 import miniRPG.data.PlayerClass;
-import miniRPG.item.Inventory;
+import miniRPG.dungeon.BattleContext;
 import miniRPG.skill.Skill;
 
 import java.util.ArrayList;
@@ -20,16 +20,18 @@ public class Player extends Character {
     private int bonusATK;
     private int bonusDEF;
 
-    private final Inventory inventory;
     protected final List<Skill> skills;
 
     protected final Currency currency;
+
+    private final String spritePath;
 
     public Player(String name,
                   PlayerClass playerClass,
                   int baseHP, int baseATK, int baseDEF,
                   int startingExp,
-                  int startingGold) {
+                  int startingGold,
+                  String spritePath) {
 
         super(name, 1, 1, 1);
 
@@ -43,10 +45,10 @@ public class Player extends Character {
         this.bonusATK = 0;
         this.bonusDEF = 0;
 
-        this.inventory = new Inventory();
         this.skills = new ArrayList<>();
-
         this.currency = new Currency(Math.max(0, startingGold));
+
+        this.spritePath = spritePath;
 
         setExp(Math.max(0, startingExp));
         recalcStats(true);
@@ -78,66 +80,50 @@ public class Player extends Character {
         }
     }
 
-    public void increaseAttack(int amount) {
-        if (amount <= 0) return;
-        bonusATK += amount;
-        recalcStats(false);
+    public PlayerClass getPlayerClass() {
+        return playerClass;
     }
 
-    public void increaseDefense(int amount) {
-        if (amount <= 0) return;
-        bonusDEF += amount;
-        recalcStats(false);
-    }
-
-    public void increaseMaxHP(int amount) {
-        if (amount <= 0) return;
-        bonusHP += amount;
-        int prevMax = maxHP;
-        recalcStats(false);
-        int diff = maxHP - prevMax;
-        if (diff > 0) currentHP += diff;
-        currentHP = Math.min(currentHP, maxHP);
-    }
-
-    public void useSkill(int index, Character target) {
-        if (index < 0 || index >= skills.size()) return;
-        skills.get(index).use(this, target);
+    public String getSpritePath() {
+        return spritePath;
     }
 
     public List<Skill> getSkills() {
         return skills;
     }
 
-    public Inventory getInventory() {
-        return inventory;
+    public Skill getPrimarySkill() {
+        if (skills.isEmpty()) return null;
+        return skills.get(0);
     }
 
-    @Override
-    public void takeTurn(Character target) {
+    public String getPrimarySkillName() {
+        Skill s = getPrimarySkill();
+        return (s == null) ? "" : s.getName();
     }
 
-    @Override
-    public void endTurn() {
-        for (Skill skill : skills) {
-            skill.reduceCooldown();
-        }
+    public void usePrimarySkill(BattleContext ctx, Character target) {
+        Skill s = getPrimarySkill();
+        if (s == null) return;
+        s.use(ctx, this, target);
     }
 
-    public PlayerClass getPlayerClass() {
-        return playerClass;
+    public void increaseAttack(int delta) {
+        if (delta <= 0) return;
+        bonusATK += delta;
+        recalcStats(false);
     }
 
-    public int getBaseHP() {
-        return baseHP;
+    public void increaseDefense(int delta) {
+        if (delta <= 0) return;
+        bonusDEF += delta;
+        recalcStats(false);
     }
 
-    public int getBaseATK() {
-        return baseATK;
-    }
-
-    public int getBaseDEF() {
-        return baseDEF;
+    public void increaseMaxHP(int delta) {
+        if (delta <= 0) return;
+        bonusHP += delta;
+        recalcStats(true);
     }
 
     public Currency getCurrency() {

@@ -5,49 +5,33 @@ import miniRPG.monster.normalMonster.ArmoredSkeleton;
 import miniRPG.monster.normalMonster.Shadow;
 import miniRPG.monster.normalMonster.Slime;
 
-public class MonsterFactory {
+import java.util.concurrent.ThreadLocalRandom;
+
+public final class MonsterFactory {
 
     private MonsterFactory() {}
 
     public static Monster createMonster(int floor) {
+        int f = Math.max(1, floor);
 
-        if (floor == 30) {
-            return new CorruptedSlime();
+        if (f % 5 == 0) {
+            return new CorruptedSlime(f);
         }
 
-        switch (floor) {
-            case 5:
-            case 10:
-            case 15:
-            case 20:
-            case 25:
-                return new CorruptedSlime();
+        int roll = ThreadLocalRandom.current().nextInt(100);
+
+        if (f <= 3) {
+            return (roll < 75) ? new Slime(f) : new Shadow(f);
         }
 
-        if (floor >= 1 && floor <= 4) {
-            return new Slime(floor);
+        if (f <= 8) {
+            if (roll < 45) return new Slime(f);
+            if (roll < 80) return new Shadow(f);
+            return new ArmoredSkeleton(f);
         }
 
-        if (floor >= 6 && floor <= 9) {
-            return new Slime(floor);
-        }
-
-        if (floor >= 11 && floor <= 14) {
-            return new ArmoredSkeleton(floor);
-        }
-
-        if (floor >= 16 && floor <= 19) {
-            return new ArmoredSkeleton(floor);
-        }
-
-        if (floor >= 21 && floor <= 24) {
-            return new Shadow(floor);
-        }
-
-        if (floor >= 26 && floor <= 29) {
-            return new Shadow(floor);
-        }
-
-        throw new IllegalArgumentException("Invalid dungeon floor: " + floor);
+        if (roll < 30) return new Shadow(f);
+        if (roll < 70) return new ArmoredSkeleton(f);
+        return new Slime(f);
     }
 }

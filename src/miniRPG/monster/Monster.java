@@ -12,18 +12,22 @@ public abstract class Monster extends Character {
     protected final int expReward;
     protected final int goldReward;
 
+    private final String spritePath;
+
     protected final Map<String, Integer> skillCooldowns;
 
     public Monster(String name,
                    int maxHP, int attack, int defense,
                    MonsterType monsterType,
                    int expReward,
-                   int goldReward) {
+                   int goldReward,
+                   String spritePath) {
 
         super(name, maxHP, attack, defense);
         this.monsterType = monsterType;
         this.expReward = expReward;
         this.goldReward = goldReward;
+        this.spritePath = spritePath;
         this.skillCooldowns = new HashMap<>();
     }
 
@@ -39,6 +43,10 @@ public abstract class Monster extends Character {
         return goldReward;
     }
 
+    public String getSpritePath() {
+        return spritePath;
+    }
+
     protected void reduceCooldowns() {
         for (String key : skillCooldowns.keySet()) {
             int cd = skillCooldowns.get(key);
@@ -52,12 +60,4 @@ public abstract class Monster extends Character {
         int damage = Math.max(1, basicAttack() - target.getDefense());
         target.receiveDamage(damage);
     }
-
-    @Override
-    public void endTurn() {
-        reduceCooldowns();
-    }
-
-    @Override
-    public abstract void takeTurn(Character target);
 }

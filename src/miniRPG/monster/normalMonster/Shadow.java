@@ -1,31 +1,47 @@
 package miniRPG.monster.normalMonster;
 
-import miniRPG.character.Character;
 import miniRPG.data.MonsterType;
 import miniRPG.monster.Monster;
 
 public class Shadow extends Monster {
 
+    private static final String SPRITE = "/images/shadow.png";
+
     public Shadow(int floor) {
         super(
                 "Shadow",
-                hp(floor), atk(floor), def(floor),
+                maxHp(floor),
+                atk(floor),
+                def(floor),
                 MonsterType.NORMAL,
                 expReward(floor),
-                goldReward(floor)
+                goldReward(floor),
+                SPRITE
         );
     }
 
-    private static int hp(int floor) { return 70 + (floor * 18); }
-    private static int atk(int floor) { return 18 + (floor * 5); }
-    private static int def(int floor) { return 8 + (floor * 3); }
+    private static int maxHp(int floor) {
+        int f = Math.max(1, floor);
+        return 44 + (f * 11);
+    }
 
-    private static int expReward(int floor) { return 38 + (floor * 8); }
-    private static int goldReward(int floor) { return 20 + (floor * 5); }
+    private static int atk(int floor) {
+        int f = Math.max(1, floor);
+        return 10 + (f * 3);
+    }
 
-    @Override
-    public void takeTurn(Character target) {
-        if (!alive) return;
-        attackTarget(target);
+    private static int def(int floor) {
+        int f = Math.max(1, floor);
+        return 1 + (f / 4);
+    }
+
+    private static int expReward(int floor) {
+        int f = Math.max(1, floor);
+        return 34 + (f * 7);
+    }
+
+    private static int goldReward(int floor) {
+        int f = Math.max(1, floor);
+        return 9 + (f * 2);
     }
 }

@@ -5,13 +5,14 @@ import miniRPG.skill.SpiritArrow;
 
 public class Archer extends Player {
 
-    private static final int BASE_HP = 150;
+    private static final int BASE_HP = 140;
     private static final int BASE_ATK = 14;
-    private static final int BASE_DEF = 8;
+    private static final int BASE_DEF = 7;
+
+    private static final String SPRITE = "/images/archer.png";
 
     public Archer(String name, int startingExp, int startingGold) {
-        super(name, PlayerClass.ARCHER, BASE_HP, BASE_ATK, BASE_DEF, startingExp, startingGold);
-
+        super(name, PlayerClass.ARCHER, BASE_HP, BASE_ATK, BASE_DEF, startingExp, startingGold, SPRITE);
         skills.add(new SpiritArrow());
     }
 

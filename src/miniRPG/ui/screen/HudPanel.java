@@ -1,133 +1,87 @@
 package miniRPG.ui.screen;
 
-import javax.imageio.ImageIO;
+import miniRPG.character.Player;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
-import java.io.InputStream;
 
-public class HudPanel extends JPanel {
+public class HudPanel extends JPanel implements PropertyChangeListener {
 
-    private final JLabel coinValue = new JLabel("0");
-    private final JLabel levelValue = new JLabel("Level 1");
-    private final JProgressBar expBar = new JProgressBar(0, 1000);
+    private final JLabel coinLabel = new JLabel("Gold: 0");
+    private final JLabel levelLabel = new JLabel("Level 1");
+    private final JLabel expLabel = new JLabel("EXP 0/1000");
 
-    private Image coinIcon;
-
-    private AppFrame frame;
-    private PropertyChangeListener listener;
+    private AppFrame boundFrame;
 
     public HudPanel() {
-        setOpaque(false);
-        setLayout(new BorderLayout(10, 8));
-        setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
+        setOpaque(true);
+        setBackground(new Color(20, 20, 20, 200));
+        setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 255, 255, 70), 1),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-        coinIcon = loadIcon("/images/coin.png", 18, 18);
+        styleLabel(coinLabel, 12f, false);
+        styleLabel(levelLabel, 13f, true);
+        styleLabel(expLabel, 12f, false);
 
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        top.setOpaque(false);
-
-        JLabel coinImg = new JLabel();
-        if (coinIcon != null) coinImg.setIcon(new ImageIcon(coinIcon));
-
-        coinValue.setForeground(Color.WHITE);
-        coinValue.setFont(coinValue.getFont().deriveFont(Font.BOLD, 14f));
-
-        levelValue.setForeground(Color.WHITE);
-        levelValue.setFont(levelValue.getFont().deriveFont(Font.BOLD, 13f));
-
-        top.add(coinImg);
-        top.add(coinValue);
-        top.add(Box.createHorizontalStrut(10));
-        top.add(levelValue);
-
-        JPanel expRow = new JPanel(new BorderLayout(8, 0));
-        expRow.setOpaque(false);
-
-        JLabel expLabel = new JLabel("EXP");
-        expLabel.setForeground(new Color(180, 210, 255));
-        expLabel.setFont(expLabel.getFont().deriveFont(Font.BOLD, 12f));
-
-        expBar.setOpaque(false);
-        expBar.setBorderPainted(false);
-        expBar.setStringPainted(true);
-        expBar.setForeground(new Color(80, 170, 255));
-        expBar.setBackground(new Color(0, 0, 0, 90));
-        expBar.setFont(expBar.getFont().deriveFont(Font.BOLD, 11f));
-
-        expRow.add(expLabel, BorderLayout.WEST);
-        expRow.add(expBar, BorderLayout.CENTER);
-
-        add(top, BorderLayout.NORTH);
-        add(expRow, BorderLayout.SOUTH);
+        add(coinLabel);
+        add(Box.createVerticalStrut(2));
+        add(levelLabel);
+        add(Box.createVerticalStrut(2));
+        add(expLabel);
     }
 
     public void bind(AppFrame frame) {
-        this.frame = frame;
-
-        if (listener != null) frame.removeAppListener(listener);
-
-        listener = (PropertyChangeEvent evt) -> {
-            String n = evt.getPropertyName();
-            if ("coin".equals(n) || "exp".equals(n) || "stats".equals(n)) {
-                syncFromFrame(frame);
-            }
-        };
-
-        frame.addAppListener(listener);
-        syncFromFrame(frame);
+        if (boundFrame != null) {
+            boundFrame.removeAppListener(this);
+        }
+        boundFrame = frame;
+        if (boundFrame != null) {
+            boundFrame.addAppListener(this);
+            syncFromFrame(boundFrame);
+        }
     }
 
     public void syncFromFrame(AppFrame frame) {
+        if (frame == null) return;
+
         int coin = frame.getCurrentCoin();
         int exp = frame.getCurrentExp();
 
         int level = (exp / 1000) + 1;
+        int into = exp % 1000;
         int nextTotal = level * 1000;
 
-        int intoLevel = exp - ((level - 1) * 1000);
-        int need = 1000;
+        coinLabel.setText("Gold: " + coin);
+        levelLabel.setText("Level " + level);
+        expLabel.setText("EXP " + (into == 0 ? 0 : (exp - ((level - 1) * 1000))) + "/" + nextTotal);
 
-        coinValue.setText(String.valueOf(coin));
-        levelValue.setText("Level " + level);
-
-        expBar.setMinimum(0);
-        expBar.setMaximum(need);
-        expBar.setValue(Math.max(0, Math.min(need, intoLevel)));
-        expBar.setString(exp + "/" + nextTotal);
-
-        repaint();
-    }
-
-    private Image loadIcon(String path, int w, int h) {
-        try (InputStream is = getClass().getResourceAsStream(path)) {
-            if (is == null) return null;
-            BufferedImage raw = ImageIO.read(is);
-            return raw.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-        } catch (IOException e) {
-            return null;
+        Player p = frame.getCurrentPlayer();
+        if (p != null) {
+            int pl = p.getLevel();
+            int pNext = pl * 1000;
+            expLabel.setText("EXP " + p.getExp() + "/" + pNext);
+            levelLabel.setText("Level " + pl);
         }
     }
 
+    private void styleLabel(JLabel l, float size, boolean bold) {
+        l.setForeground(Color.WHITE);
+        Font f = l.getFont().deriveFont(bold ? Font.BOLD : Font.PLAIN, size);
+        l.setFont(f);
+    }
+
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setClip(0, 0, getWidth(), getHeight());
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (boundFrame == null) return;
 
-        int w = getWidth();
-        int h = getHeight();
-
-        g2.setColor(new Color(0, 0, 0, 130));
-        g2.fillRoundRect(0, 0, w, h, 18, 18);
-
-        g2.setColor(new Color(255, 255, 255, 70));
-        g2.drawRoundRect(0, 0, w - 1, h - 1, 18, 18);
-
-        g2.dispose();
+        String p = evt.getPropertyName();
+        if ("coin".equals(p) || "exp".equals(p) || "stats".equals(p)) {
+            SwingUtilities.invokeLater(() -> syncFromFrame(boundFrame));
+        }
     }
 }

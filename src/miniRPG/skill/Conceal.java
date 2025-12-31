@@ -1,21 +1,16 @@
 package miniRPG.skill;
 
 import miniRPG.character.Character;
-import miniRPG.data.StatusEffect;
+import miniRPG.dungeon.BattleContext;
 
-public class Conceal extends miniRPG.skill.Skill {
+public class Conceal extends Skill {
 
     public Conceal() {
-        super("Conceal", "Become invisible and avoid attacks", 5);
+        super("Conceal", "Negates the next incoming damage to the player");
     }
 
     @Override
-    protected void applyEffect(Character caster, Character target) {
-        caster.addStatusEffect(StatusEffect.INVISIBLE);
-    }
-
-    @Override
-    protected void onLevelUp() {
-        // Duration handled nanti
+    protected void applyEffect(BattleContext ctx, Character user, Character target) {
+        ctx.activateConceal();
     }
 }

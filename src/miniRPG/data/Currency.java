@@ -5,7 +5,7 @@ public class Currency {
     private int gold;
 
     public Currency(int startingGold) {
-        this.gold = startingGold;
+        this.gold = Math.max(0, startingGold);
     }
 
     public int getGold() {
@@ -13,14 +13,14 @@ public class Currency {
     }
 
     public boolean spend(int amount) {
-        if (amount > gold || amount <= 0) return false;
+        if (amount <= 0) return false;
+        if (amount > gold) return false;
         gold -= amount;
         return true;
     }
 
     public void earn(int amount) {
-        if (amount > 0) {
-            gold += amount;
-        }
+        if (amount <= 0) return;
+        gold += amount;
     }
 }

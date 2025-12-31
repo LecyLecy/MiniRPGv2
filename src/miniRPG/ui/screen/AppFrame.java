@@ -17,23 +17,29 @@ public class AppFrame extends JFrame {
 
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel root = new JPanel(cardLayout);
+
     private PlayerClass selectedClass;
     private final AuthService AuthService;
+
     private Player currentPlayer;
     private String currentUsername;
+
     private final MapPanel mapPanel;
     private final ShopPanel shopPanel;
     private final DungeonPanel dungeonPanel;
     private final UpgradePanel upgradePanel;
+
     private final FadeOverlay fadeOverlay = new FadeOverlay();
     private boolean isTransitioning = false;
+
     private int currentCoin = 0;
-    private JButton exitButton;
     private int currentExp = 0;
+
+    private JButton exitButton;
+
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 
     public AppFrame() {
-        // init backend auth
         UserRepositoryCsv repo = new UserRepositoryCsv("users.csv");
         AuthService = new AuthService(repo);
 
@@ -52,7 +58,6 @@ public class AppFrame extends JFrame {
         setLocationRelativeTo(null);
         setUndecorated(true);
 
-        // screens
         root.add(new LoginPanel(this, AuthService), "login");
         root.add(new RegisterPanel(this, AuthService), "register");
         root.add(new CreateCharacterPanel(this, AuthService), "createCharacter");
@@ -74,7 +79,11 @@ public class AppFrame extends JFrame {
         setGlassPane(fadeOverlay);
         fadeOverlay.setVisible(false);
         showScreen("login");
-    } // end of constructor
+    }
+
+    public void fireStatsChanged() {
+        pcs.firePropertyChange("stats", null, null);
+    }
 
     public void requestExitUi() {
         requestExit();
@@ -91,15 +100,13 @@ public class AppFrame extends JFrame {
     private void persistSessionSilently() {
         try {
             if (currentUsername == null || currentUsername.trim().isEmpty()) return;
-
             AuthService.setCoin(currentUsername, currentCoin);
             AuthService.setExp(currentUsername, currentExp);
-
         } catch (Exception ignored) {}
     }
 
-
     public int getCurrentExp() { return currentExp; }
+
     public void setCurrentCoin(int c) {
         int old = this.currentCoin;
         this.currentCoin = Math.max(0, c);
@@ -110,14 +117,11 @@ public class AppFrame extends JFrame {
         int old = this.currentExp;
         this.currentExp = Math.max(0, e);
         pcs.firePropertyChange("exp", old, this.currentExp);
-
         pcs.firePropertyChange("stats", null, null);
     }
 
-
     private void requestExit() {
         if (!showExitConfirmDialog()) return;
-
         persistSessionSilently();
         dispose();
         System.exit(0);
@@ -172,24 +176,10 @@ public class AppFrame extends JFrame {
         if (delta != 0) setCurrentCoin(getCurrentCoin() + delta);
     }
 
-
-
-    private void persistCoinSilently() {
-        try {
-            if (currentUsername == null || currentUsername.trim().isEmpty()) return;
-            // Only save coin on exit
-            AuthService.setCoin(currentUsername, currentCoin);
-            AuthService.setExp(currentUsername, currentExp);
-        } catch (Exception ignored) {
-            // Don't block exit if saving fails
-        }
-    }
-
     private void initExitButton() {
-        exitButton = createExitButton();
+        exitButton = UiKit.createExitButton(this::requestExitUi);
         getLayeredPane().add(exitButton, JLayeredPane.POPUP_LAYER);
 
-        // reposition when frame size changes (even though you lock size, still safe)
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
@@ -219,14 +209,6 @@ public class AppFrame extends JFrame {
         exitButton.repaint();
     }
 
-    private JButton createExitButton() {
-        JButton btn = new JButton("Exit");
-        UiKit.applyGhost(btn);
-        UiKit.setFixedSize(btn, UiKit.BTN_GHOST_SIZE);
-        btn.addActionListener(e -> requestExitUi());
-        return btn;
-    }
-
     public int getCurrentCoin() { return currentCoin; }
 
     public void transitionTo(String screenName) {
@@ -238,7 +220,6 @@ public class AppFrame extends JFrame {
         isTransitioning = true;
 
         fadeOverlay.play(() -> {
-            // fully black here
             if (beforeShow != null) beforeShow.run();
             showScreen(screenName);
         }, () -> {
@@ -264,6 +245,7 @@ public class AppFrame extends JFrame {
     public void setCurrentUsername(String u) {
         this.currentUsername = u;
     }
+
     public String getCurrentUsername() {
         return currentUsername;
     }
@@ -271,24 +253,26 @@ public class AppFrame extends JFrame {
     public void setCurrentPlayer(Player p) {
         this.currentPlayer = p;
     }
+
     public Player getCurrentPlayer() {
         return currentPlayer;
     }
 
     public Player buildPlayerFromRole(String username, String role) {
         int exp = getCurrentExp();
+        int gold = getCurrentCoin();
 
         if (role == null) role = "";
         switch (role.toUpperCase()) {
             case "WARRIOR":
             case "KNIGHT":
-                return new Warrior(username, exp);
+                return new Warrior(username, exp, gold);
             case "ARCHER":
-                return new Archer(username, exp);
+                return new Archer(username, exp, gold);
             case "MAGE":
-                return new Mage(username, exp);
+                return new Mage(username, exp, gold);
             default:
-                return new Warrior(username, exp);
+                return new Warrior(username, exp, gold);
         }
     }
 
@@ -297,12 +281,11 @@ public class AppFrame extends JFrame {
     }
 
     public void openMap() {
-        // fade back to map; respawn happens while screen is black
-        transitionTo("map", () -> mapPanel.resetSpawn());
+        transitionTo("map", mapPanel::resetSpawn);
     }
 
     private static class FadeOverlay extends JComponent {
-        private float alpha = 0f;                 // 0 = clear, 1 = black
+        private float alpha = 0f;
         private Timer timer;
         private int holdTicks = 0;
 
@@ -329,32 +312,28 @@ public class AppFrame extends JFrame {
 
             if (timer != null && timer.isRunning()) timer.stop();
 
-            // ~60fps
             timer = new Timer(16, e -> tick());
             timer.start();
         }
 
         private void tick() {
-            final float step = 0.08f; // speed; adjust if you want slower/faster
+            final float step = 0.08f;
 
             switch (phase) {
                 case FADE_OUT:
                     alpha = Math.min(1f, alpha + step);
                     repaint();
                     if (alpha >= 1f) {
-                        // fully black
                         if (midAction != null) midAction.run();
                         phase = Phase.HOLD_BLACK;
-                        holdTicks = 8; // ~128ms hold; adjust for longer black pause
+                        holdTicks = 8;
                     }
                     break;
 
                 case HOLD_BLACK:
                     repaint();
                     holdTicks--;
-                    if (holdTicks <= 0) {
-                        phase = Phase.FADE_IN;
-                    }
+                    if (holdTicks <= 0) phase = Phase.FADE_IN;
                     break;
 
                 case FADE_IN:
@@ -378,7 +357,4 @@ public class AppFrame extends JFrame {
             g2.dispose();
         }
     }
-
-
 }
-

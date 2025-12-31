@@ -1,6 +1,7 @@
 package miniRPG.ui.screen;
 
 import miniRPG.character.Player;
+import miniRPG.map.MapController;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -13,130 +14,94 @@ public class MapPanel extends JPanel {
 
     private static final int STEP = 8;
     private static final int TICK_MS = 16;
-    private static final int SPRITE_W = 56;
-    private static final int SPRITE_H = 56;
+
+    private static final int SPR_W = 56;
+    private static final int SPR_H = 56;
+
     private static final int ENTR_W = 110;
     private static final int ENTR_H = 70;
-    private int x;
-    private int y;
-    private boolean up, down, left, right;
-    private Image sprite;
-    private Image mapRaw;
-    private Image mapScaled;
-    private int mapW = -1, mapH = -1;
-    private Rectangle upgradeRect = new Rectangle();
-    private Rectangle shopRect = new Rectangle();
-    private Rectangle dungeonRect = new Rectangle();
-    private boolean transitioning = false;
-    private final HudPanel hud;
 
+    private final AppFrame frame;
 
+    private Image mapBgRaw;
+    private Image mapBgScaled;
+    private int bgW = -1, bgH = -1;
+
+    private Image playerSprite;
+
+    private final HudPanel hud = new HudPanel();
+    private final MapController controller;
+
+    private Timer timer;
+
+    private boolean spawnPending = true;
+    private boolean entranceLocked = false;
 
     public MapPanel(AppFrame frame) {
-        setFocusable(true);
-        setOpaque(true);
+        this.frame = frame;
 
         setLayout(new BorderLayout());
-        hud = UiKit.buildHud(frame);
+        setOpaque(true);
+        setFocusable(true);
+
+        mapBgRaw = loadImageRaw("/images/map.png");
+
+        hud.bind(frame);
+        UiKit.setFixedSize(hud, UiKit.HUD_SIZE);
         add(UiKit.topBarLeftHud(hud), BorderLayout.NORTH);
 
-        mapRaw = loadRaw("/images/map.png");
+        controller = new MapController(STEP, SPR_W, SPR_H, ENTR_W, ENTR_H);
 
-        x = 20;
-        y = 200;
+        bindKeys();
 
-        bindKey("pressed W", KeyStroke.getKeyStroke("pressed W"), () -> up = true);
-        bindKey("released W", KeyStroke.getKeyStroke("released W"), () -> up = false);
-
-        bindKey("pressed S", KeyStroke.getKeyStroke("pressed S"), () -> down = true);
-        bindKey("released S", KeyStroke.getKeyStroke("released S"), () -> down = false);
-
-        bindKey("pressed A", KeyStroke.getKeyStroke("pressed A"), () -> left = true);
-        bindKey("released A", KeyStroke.getKeyStroke("released A"), () -> left = false);
-
-        bindKey("pressed D", KeyStroke.getKeyStroke("pressed D"), () -> right = true);
-        bindKey("released D", KeyStroke.getKeyStroke("released D"), () -> right = false);
-
-        bindKey("pressed UP", KeyStroke.getKeyStroke("pressed UP"), () -> up = true);
-        bindKey("released UP", KeyStroke.getKeyStroke("released UP"), () -> up = false);
-
-        bindKey("pressed DOWN", KeyStroke.getKeyStroke("pressed DOWN"), () -> down = true);
-        bindKey("released DOWN", KeyStroke.getKeyStroke("released DOWN"), () -> down = false);
-
-        bindKey("pressed LEFT", KeyStroke.getKeyStroke("pressed LEFT"), () -> left = true);
-        bindKey("released LEFT", KeyStroke.getKeyStroke("released LEFT"), () -> left = false);
-
-        bindKey("pressed RIGHT", KeyStroke.getKeyStroke("pressed RIGHT"), () -> right = true);
-        bindKey("released RIGHT", KeyStroke.getKeyStroke("released RIGHT"), () -> right = false);
-
-        Timer timer = new Timer(TICK_MS, e -> {
-            if (!isShowing()) return;
-            updatePositionAndCollisions(frame);
-            repaint();
-        });
-        timer.start();
+        timer = new Timer(TICK_MS, e -> onTick());
 
         addHierarchyListener(e -> {
             if (isShowing()) {
                 requestFocusInWindow();
-                resetSpawn();
-                layoutEntrances();
-                clampToBounds();
+                hud.syncFromFrame(frame);
+                refreshPlayer(frame);
+                if (!timer.isRunning()) timer.start();
             } else {
-                clearMovementFlags();
+                controller.resetInput();
+                entranceLocked = false;
+                if (timer.isRunning()) timer.stop();
             }
         });
-
-        SwingUtilities.invokeLater(this::requestFocusInWindow);
     }
 
-    public void refreshPlayer(AppFrame frame) {
-        clearMovementFlags();
-        Player p = frame.getCurrentPlayer();
-        if (p != null) {
-            sprite = loadSpriteForRole(p.getPlayerClass().name());
-        }
-        hud.syncFromFrame(frame);
-        transitioning = false;
-        layoutEntrances();
-        repaint();
+    private void bindKeys() {
+        InputMap im = getInputMap(WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = getActionMap();
+
+        bindKey(im, am, "pressed W", "upOn", () -> controller.setUp(true));
+        bindKey(im, am, "released W", "upOff", () -> controller.setUp(false));
+
+        bindKey(im, am, "pressed S", "downOn", () -> controller.setDown(true));
+        bindKey(im, am, "released S", "downOff", () -> controller.setDown(false));
+
+        bindKey(im, am, "pressed A", "leftOn", () -> controller.setLeft(true));
+        bindKey(im, am, "released A", "leftOff", () -> controller.setLeft(false));
+
+        bindKey(im, am, "pressed D", "rightOn", () -> controller.setRight(true));
+        bindKey(im, am, "released D", "rightOff", () -> controller.setRight(false));
+
+        bindKey(im, am, "pressed UP", "upOn2", () -> controller.setUp(true));
+        bindKey(im, am, "released UP", "upOff2", () -> controller.setUp(false));
+
+        bindKey(im, am, "pressed DOWN", "downOn2", () -> controller.setDown(true));
+        bindKey(im, am, "released DOWN", "downOff2", () -> controller.setDown(false));
+
+        bindKey(im, am, "pressed LEFT", "leftOn2", () -> controller.setLeft(true));
+        bindKey(im, am, "released LEFT", "leftOff2", () -> controller.setLeft(false));
+
+        bindKey(im, am, "pressed RIGHT", "rightOn2", () -> controller.setRight(true));
+        bindKey(im, am, "released RIGHT", "rightOff2", () -> controller.setRight(false));
     }
 
-    public void resetSpawn() {
-        clearMovementFlags();
-        x = 20;
-        y = (getHeight() / 2) - (SPRITE_H / 2);
-        if (y < 0) y = 0;
-        transitioning = false;
-    }
-
-    private void layoutEntrances() {
-        int w = getWidth();
-        int h = getHeight();
-        if (w <= 0 || h <= 0) return;
-
-        upgradeRect = new Rectangle(
-                (w / 2) - (ENTR_W / 2),
-                30,
-                ENTR_W, ENTR_H
-        );
-
-        shopRect = new Rectangle(
-                (w / 2) - (ENTR_W / 2),
-                h - ENTR_H - 30,
-                ENTR_W, ENTR_H
-        );
-
-        dungeonRect = new Rectangle(
-                w - ENTR_W - 30,
-                (h / 2) - (ENTR_H / 2),
-                ENTR_W, ENTR_H
-        );
-    }
-
-    private void bindKey(String name, KeyStroke key, Runnable r) {
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(key, name);
-        getActionMap().put(name, new AbstractAction() {
+    private void bindKey(InputMap im, ActionMap am, String stroke, String key, Runnable r) {
+        im.put(KeyStroke.getKeyStroke(stroke), key);
+        am.put(key, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 r.run();
@@ -144,7 +109,56 @@ public class MapPanel extends JPanel {
         });
     }
 
-    private Image loadRaw(String path) {
+    private void onTick() {
+        if (!isShowing()) return;
+
+        if (spawnPending && getWidth() > 0 && getHeight() > 0) {
+            controller.resetSpawn(getWidth(), getHeight());
+            spawnPending = false;
+        }
+
+        controller.tick(getWidth(), getHeight());
+
+        if (!entranceLocked) {
+            String target = controller.consumeEntranceIfAny();
+            if (target != null) {
+                entranceLocked = true;
+                controller.resetInput();
+                frame.openEntrance(target);
+                return;
+            }
+        }
+
+        repaint();
+    }
+
+    public void resetSpawn() {
+        spawnPending = true;
+        entranceLocked = false;
+        controller.resetInput();
+        requestFocusInWindow();
+    }
+
+    public void refreshPlayer(AppFrame frame) {
+        Player p = frame.getCurrentPlayer();
+        if (p == null) {
+            playerSprite = null;
+            return;
+        }
+        playerSprite = loadScaled(p.getSpritePath(), SPR_W, SPR_H);
+    }
+
+    private Image loadScaled(String path, int w, int h) {
+        try (InputStream is = getClass().getResourceAsStream(path)) {
+            if (is == null) return null;
+            Image img = ImageIO.read(is);
+            return img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private Image loadImageRaw(String path) {
         try (InputStream is = getClass().getResourceAsStream(path)) {
             if (is == null) return null;
             return ImageIO.read(is);
@@ -153,121 +167,37 @@ public class MapPanel extends JPanel {
         }
     }
 
-    private Image loadSpriteForRole(String role) {
-        String path;
-        switch (role.toUpperCase()) {
-            case "WARRIOR":
-            case "KNIGHT":
-                path = "/images/warrior.png";
-                break;
-            case "ARCHER":
-                path = "/images/archer.png";
-                break;
-            case "MAGE":
-                path = "/images/mage.png";
-                break;
-            default:
-                path = "/images/warrior.png";
-        }
-        return loadScaled(path, SPRITE_W, SPRITE_H);
-    }
-
-    private void updatePositionAndCollisions(AppFrame frame) {
-        if (transitioning) return;
-
-        int dx = 0, dy = 0;
-        if (up) dy -= STEP;
-        if (down) dy += STEP;
-        if (left) dx -= STEP;
-        if (right) dx += STEP;
-
-        x += dx;
-        y += dy;
-
-        clampToBounds();
-
-        Rectangle playerRect = new Rectangle(x, y, SPRITE_W, SPRITE_H);
-
-        if (playerRect.intersects(upgradeRect)) {
-            transitioning = true;
-            clearMovementFlags();
-            frame.openEntrance("upgrade");
-        } else if (playerRect.intersects(shopRect)) {
-            transitioning = true;
-            clearMovementFlags();
-            frame.openEntrance("shop");
-        } else if (playerRect.intersects(dungeonRect)) {
-            transitioning = true;
-            clearMovementFlags();
-            frame.openEntrance("dungeon");
-        }
-    }
-
-    private void clampToBounds() {
-        int w = getWidth();
-        int h = getHeight();
-        if (w <= 0 || h <= 0) return;
-
-        int maxX = w - SPRITE_W;
-        int maxY = h - SPRITE_H;
-
-        if (x < 0) x = 0;
-        if (y < 0) y = 0;
-        if (x > maxX) x = maxX;
-        if (y > maxY) y = maxY;
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        if (mapRaw != null) {
+        if (mapBgRaw != null) {
             int w = getWidth();
             int h = getHeight();
-            if (mapScaled == null || mapW != w || mapH != h) {
-                mapScaled = mapRaw.getScaledInstance(w, h, Image.SCALE_FAST);
-                mapW = w;
-                mapH = h;
+            if (mapBgScaled == null || bgW != w || bgH != h) {
+                mapBgScaled = mapBgRaw.getScaledInstance(w, h, Image.SCALE_FAST);
+                bgW = w;
+                bgH = h;
             }
-            g.drawImage(mapScaled, 0, 0, null);
+            g.drawImage(mapBgScaled, 0, 0, null);
         } else {
-            g.setColor(new Color(90, 160, 110));
+            g.setColor(new Color(45, 45, 45));
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
         Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        if (sprite != null) {
-            g2.drawImage(sprite, x, y, null);
+        int x = controller.getX();
+        int y = controller.getY();
+
+        if (playerSprite != null) {
+            g2.drawImage(playerSprite, x, y, null);
         } else {
-            g2.setColor(new Color(60, 120, 200));
-            g2.fillRect(x, y, SPRITE_W, SPRITE_H);
+            g2.setColor(new Color(220, 220, 220, 180));
+            g2.fillRoundRect(x, y, SPR_W, SPR_H, 18, 18);
         }
 
         g2.dispose();
     }
-
-    private void clearMovementFlags() {
-        up = down = left = right = false;
-    }
-
-    private Image loadScaled(String path, int w, int h) {
-        try {
-            java.net.URL url = getClass().getResource(path);
-            if (url == null) return null;
-
-            Image img;
-            try {
-                img = ImageIO.read(url);
-            } catch (Exception ex) {
-                img = new ImageIcon(url).getImage();
-            }
-
-            if (img == null) return null;
-            return img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
 }
