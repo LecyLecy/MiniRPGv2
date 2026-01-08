@@ -22,7 +22,7 @@ Mini RPG berbasis Java Swing (CardLayout) dengan sistem **login/register**, **ma
 
 ---
 
-## Fitur Utama (Minimal 4)
+## Fitur Utama
 - **Auth**: Register & Login (CSV persistence)
 - **Map**: Karakter bergerak dan bisa masuk ke **Shop / Upgrade / Dungeon**
 - **Dungeon Battle**: Turn-based fight (Attack + Skill) dengan monster berbeda
